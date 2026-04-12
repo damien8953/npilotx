@@ -5,6 +5,12 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch: 
 
+# --- 新增：明確要求寫入權限 ---
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   fetch-atis:
     runs-on: ubuntu-latest
@@ -22,30 +28,22 @@ jobs:
           ZSQD, ZUCK, ZUGY, ZUUU, ZUTF
         ]
     steps:
-      # 升級到 v4
       - name: Checkout
         uses: actions/checkout@v4
-        
-      # 升級到 v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # 順便用新一點的 Python
-
+          python-version: '3.11'
       - name: Install dependencies
         run: pip install requests beautifulsoup4
-
       - name: Run Fetcher
         run: python main.py ${{ matrix.airport }}
-
-      # upload-artifact v4 其實已經很新，
-      # 但我們確保它在最新環境下執行
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
           name: atis-${{ matrix.airport }}
           path: atis_${{ matrix.airport }}.txt
-          retention-days: 1 # 只需要留 1 天，節省空間
+          retention-days: 1
 
   consolidate:
     needs: fetch-atis
@@ -53,28 +51,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
       - name: Download all results
         uses: actions/download-artifact@v4
         with:
           path: all-results
           pattern: atis-*
           merge-multiple: true
-          
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
       - name: Move files and Combine
         run: |
           cp all-results/*.txt .
           python combine.py
-          
       - name: Push everything
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add *.txt all_atis.json
-          git commit -m "Auto Update: Consolidated ATIS Data" || exit 0
-          git push origin main
+          # 如果沒有變動就不提交，避免報錯
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto Update: Consolidated ATIS Data" && git push origin main)

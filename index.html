@@ -63,7 +63,7 @@
 
         .view {
             display: none;
-            padding-bottom: 40px; /* 底部預留一點呼吸空間 */
+            padding-bottom: 80px; /* 底部預留空間給 Tab bar，避免內容被遮擋 */
         }
         .view.active {
             display: block;
@@ -96,7 +96,7 @@
         header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; user-select: none; }
 
         /* =========================================
-           BOTTOM NAVIGATION BAR (絕對固定)
+           BOTTOM NAVIGATION BAR (絕對固定且貼底)
            ========================================= */
         .tab-bar {
             flex-shrink: 0;
@@ -107,8 +107,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            height: 65px;
+            height: 60px; /* 固定高度，不使用 env(safe-area-inset-bottom) */
             z-index: 999;
         }
 
@@ -626,7 +625,7 @@
         generatedEvents.push({ title: summary, details: isAllDay ? `All Day | ${dateStr}` : `${dateStr} | ${location}` });
     }
 
-    // 新增：清空 Roster 功能
+    // 清空 Roster 功能
     function clearRoster() {
         document.getElementById('rosterInput').value = '';
         document.getElementById('preview-section').style.display = 'none';
@@ -804,7 +803,6 @@
         document.getElementById('preview-section').style.display = 'block';
         document.getElementById('downloadBtn').style.display = 'block';
         
-        // 渲染完後自動捲動到底部，方便使用者看到下載按鈕
         setTimeout(() => {
             const scrollArea = document.getElementById('scroll-area');
             scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });

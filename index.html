@@ -32,26 +32,42 @@
             --tab-bar-bg: rgba(28, 28, 30, 0.9);
         }
 
-        body {
+        /* 鎖定 Body 防止整個頁面被拖曳導致底欄亂跳 */
+        html, body {
             margin: 0; 
             padding: 0;
+            height: 100%;
+            overflow: hidden; 
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
         }
 
-        /* 隱藏所有的 view，只顯示 active 的 */
+        /* App Shell 佈局：讓畫面分為「滾動區」和「固定底欄」 */
+        #app-container {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 只有這個區塊可以上下滑動 */
+        .views-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; /* iOS 順滑滾動 */
+        }
+
         .view {
             display: none;
-            /* 預留底部 Tab bar 的空間 + iOS 安全區 */
-            padding-bottom: calc(90px + env(safe-area-inset-bottom));
+            padding-bottom: 40px; /* 底部預留一點呼吸空間 */
         }
         .view.active {
             display: block;
-            animation: fadeIn 0.3s ease;
+            animation: fadeIn 0.2s ease;
         }
 
         @keyframes fadeIn {
@@ -76,30 +92,14 @@
             align-items: flex-start;
         }
         
-        .header-center {
-            width: 100%;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        header h1 {
-            margin: 0; 
-            font-size: 24px; 
-            font-weight: 800; 
-            letter-spacing: -0.5px; 
-            user-select: none;
-        }
+        .header-center { width: 100%; text-align: center; display: flex; align-items: center; justify-content: center; }
+        header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; user-select: none; }
 
         /* =========================================
-           BOTTOM NAVIGATION BAR
+           BOTTOM NAVIGATION BAR (絕對固定)
            ========================================= */
         .tab-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            flex-shrink: 0;
             background: var(--tab-bar-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -108,36 +108,17 @@
             justify-content: space-around;
             align-items: center;
             padding-bottom: env(safe-area-inset-bottom);
-            z-index: 999;
             height: 65px;
+            z-index: 999;
         }
 
         .tab-item {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-dim);
-            font-size: 10px;
-            font-weight: 500;
-            cursor: pointer;
-            height: 100%;
-            transition: color 0.2s;
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text-dim); font-size: 10px; font-weight: 500; cursor: pointer; height: 100%; transition: color 0.2s;
         }
+        .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+        .tab-item.active { color: var(--accent-blue); }
 
-        .tab-item svg {
-            width: 24px;
-            height: 24px;
-            margin-bottom: 4px;
-            fill: currentColor;
-        }
-
-        .tab-item.active {
-            color: var(--accent-blue);
-        }
-
-        /* 統一的 Container */
         .container { padding: 16px; }
 
         /* =========================================
@@ -158,10 +139,7 @@
             font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease;
         }
         #update-btn:active { background: var(--accent-blue); color: white; transform: scale(0.95); }
-        .category-header {
-            margin: 24px 0 12px 5px; font-size: 12px; font-weight: 700;
-            color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.2px; display: flex; align-items: center;
-        }
+        .category-header { margin: 24px 0 12px 5px; font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.2px; display: flex; align-items: center; }
         .category-header::after { content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px; }
         .airport-card { background: var(--card-bg); border-radius: 14px; margin-bottom: 10px; overflow: hidden; border: 0.5px solid var(--border-color); }
         .card-header { padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; }
@@ -176,7 +154,7 @@
         .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
         .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
         #loader { 
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); 
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
             background: var(--accent-blue); color: white; padding: 10px 22px; 
             border-radius: 25px; font-size: 13px; font-weight: 700; 
             display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -185,33 +163,32 @@
         /* =========================================
            ROSTER DECODER STYLES
            ========================================= */
-        .roster-group {
-            display: flex; gap: 15px; justify-content: center;
-            background-color: var(--card-bg); padding: 15px; border-radius: 12px;
-            border: 0.5px solid var(--border-color); margin-bottom: 20px;
-        }
+        .roster-group { display: flex; gap: 15px; justify-content: center; background-color: var(--card-bg); padding: 15px; border-radius: 12px; border: 0.5px solid var(--border-color); margin-bottom: 20px; }
         .roster-item { display: flex; flex-direction: column; gap: 5px; width: 50%;}
         .roster-item label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; }
-        .roster-item select {
-            background-color: #2c2c2e; color: var(--text-main);
-            border: none; padding: 10px 12px; border-radius: 8px; font-size: 16px; outline: none; appearance: none;
-        }
+        .roster-item select { background-color: #2c2c2e; color: var(--text-main); border: none; padding: 10px 12px; border-radius: 8px; font-size: 16px; outline: none; appearance: none; }
         #rosterInput {
             width: 100%; height: 250px; background-color: var(--card-bg); color: var(--text-main);
             border: 0.5px solid var(--border-color); border-radius: 12px; padding: 16px;
-            font-family: "SF Mono", monospace; font-size: 14px; resize: vertical; box-sizing: border-box; white-space: pre-wrap; margin-bottom: 20px;
+            font-family: "SF Mono", monospace; font-size: 14px; resize: none; box-sizing: border-box; white-space: pre-wrap; margin-bottom: 20px;
         }
         #rosterInput:focus { outline: none; border-color: var(--accent-blue); }
         
+        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        
         .btn-primary {
-            width: 100%; border: none; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
-            background-color: var(--accent-blue); color: #fff; margin-bottom: 10px;
+            flex: 2; border: none; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+            background-color: var(--accent-blue); color: #fff;
+        }
+        .btn-clear {
+            flex: 1; border: none; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+            background-color: #38383a; color: #fff;
         }
         .btn-secondary {
             width: 100%; border: none; border-radius: 12px; padding: 16px; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
             background-color: var(--secondary-color); color: #000; display: none; margin-bottom: 10px;
         }
-        .btn-primary:active, .btn-secondary:active { opacity: 0.7; }
+        .btn-primary:active, .btn-clear:active, .btn-secondary:active { opacity: 0.7; }
         
         #preview-section { display: none; background-color: var(--card-bg); border: 0.5px solid var(--border-color); border-radius: 12px; padding: 20px; margin-top: 10px; }
         .event-item { border-bottom: 0.5px solid var(--border-color); padding: 12px 0; }
@@ -249,187 +226,145 @@
 </head>
 <body>
 
-    <div id="view-atis" class="view active">
-        <header>
-            <div class="header-left">
-                <h1 onclick="handleSecretClick()">ATIS PRO</h1>
-                <div class="server-update-box">
-                    <div class="server-label">Last Server Update:</div>
-                    <div class="server-time" id="global-server-update">YYYY/MM/DD HH:MM HKT</div>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="clocks">
-                    <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
-                    <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
-                </div>
-                <button id="update-btn" onclick="refreshData()">Sync Data</button>
-            </div>
-        </header>
+<div id="app-container">
 
-        <div class="container" id="airport-list"></div>
-        <div id="loader">SYNCING DATA...</div>
-    </div>
-
-
-    <div id="view-roster" class="view">
-        <header>
-            <div class="header-center">
-                <h1>Roster Decoder</h1>
-            </div>
-        </header>
-
-        <div class="container">
-            <div class="roster-group">
-                <div class="roster-item">
-                    <label>Year</label>
-                    <select id="yearSelect"></select>
-                </div>
-                <div class="roster-item">
-                    <label>Month</label>
-                    <select id="monthSelect">
-                        <option value="0">January</option>
-                        <option value="1">February</option>
-                        <option value="2">March</option>
-                        <option value="3">April</option>
-                        <option value="4">May</option>
-                        <option value="5">June</option>
-                        <option value="6">July</option>
-                        <option value="7">August</option>
-                        <option value="8">September</option>
-                        <option value="9">October</option>
-                        <option value="10">November</option>
-                        <option value="11">December</option>
-                    </select>
-                </div>
-            </div>
-
-            <textarea id="rosterInput" placeholder="Paste your roster code here..."></textarea>
-            
-            <button class="btn-primary" id="decodeBtn" onclick="processRoster()">Decode & Preview</button>
-            <button class="btn-secondary" id="downloadBtn" onclick="downloadICS()">Download / Open ICS</button>
-            
-            <div id="preview-section">
-                <h2 style="margin-top: 0; font-size: 16px; color: var(--text-dim); text-transform: uppercase;">Events Preview</h2>
-                <div id="eventsList"></div>
-            </div>
-        </div>
-    </div>
-
-
-    <div id="view-fdp" class="view">
-        <header>
-            <div class="header-center">
-                <h1>FDP Calculator</h1>
-            </div>
-        </header>
-
-        <div class="container">
-            <div class="section-title">Duty Details</div>
-            <div class="ios-card">
-                <div class="ios-row">
-                    <span class="ios-label">Check In (Local)</span>
-                    <div class="picker-group">
-                        <select id="ciHour"></select>
-                        <span class="time-label">:</span>
-                        <select id="ciMin"></select>
+    <div class="views-wrapper" id="scroll-area">
+        
+        <div id="view-atis" class="view active">
+            <header>
+                <div class="header-left">
+                    <h1 onclick="handleSecretClick()">ATIS PRO</h1>
+                    <div class="server-update-box">
+                        <div class="server-label">Last Server Update:</div>
+                        <div class="server-time" id="global-server-update">YYYY/MM/DD HH:MM HKT</div>
                     </div>
                 </div>
-                <div class="ios-row">
-                    <span class="ios-label">Sectors Today</span>
-                    <div class="picker-group">
-                        <select id="sectors">
-                            <option value="1">1 Sector</option>
-                            <option value="2">2 Sectors</option>
-                            <option value="3">3 Sectors</option>
-                            <option value="4">4 Sectors</option>
+                <div class="header-right">
+                    <div class="clocks">
+                        <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
+                        <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
+                    </div>
+                    <button id="update-btn" onclick="refreshData()">Sync Data</button>
+                </div>
+            </header>
+
+            <div class="container" id="airport-list"></div>
+            <div id="loader">SYNCING DATA...</div>
+        </div>
+
+        <div id="view-roster" class="view">
+            <header>
+                <div class="header-center"><h1>Roster Decoder</h1></div>
+            </header>
+
+            <div class="container">
+                <div class="roster-group">
+                    <div class="roster-item">
+                        <label>Year</label>
+                        <select id="yearSelect"></select>
+                    </div>
+                    <div class="roster-item">
+                        <label>Month</label>
+                        <select id="monthSelect">
+                            <option value="0">January</option><option value="1">February</option>
+                            <option value="2">March</option><option value="3">April</option>
+                            <option value="4">May</option><option value="5">June</option>
+                            <option value="6">July</option><option value="7">August</option>
+                            <option value="8">September</option><option value="9">October</option>
+                            <option value="10">November</option><option value="11">December</option>
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <div class="section-title">Last Sector Times</div>
-            <div class="ios-card">
-                <div class="ios-row">
-                    <span class="ios-label">Taxi Before Take Off</span>
-                    <div class="picker-group">
-                        <select id="taxiOut"></select>
-                        <span class="time-label">Mins</span>
-                    </div>
+                <textarea id="rosterInput" placeholder="Paste your roster code here..."></textarea>
+                
+                <div class="btn-row">
+                    <button class="btn-clear" onclick="clearRoster()">Clear</button>
+                    <button class="btn-primary" id="decodeBtn" onclick="processRoster()">Decode & Preview</button>
                 </div>
-                <div class="ios-row">
-                    <span class="ios-label">Flight Time</span>
-                    <div class="picker-group">
-                        <select id="fltHour"></select>
-                        <span class="time-label">H</span>
-                        <select id="fltMin"></select>
-                        <span class="time-label">M</span>
-                    </div>
-                </div>
-                <div class="ios-row">
-                    <span class="ios-label">Taxi After Landing</span>
-                    <div class="picker-group">
-                        <select id="taxiIn"></select>
-                        <span class="time-label">Mins</span>
-                    </div>
+                
+                <button class="btn-secondary" id="downloadBtn" onclick="downloadICS()">Download / Open ICS</button>
+                
+                <div id="preview-section">
+                    <h2 style="margin-top: 0; font-size: 16px; color: var(--text-dim); text-transform: uppercase;">Events Preview</h2>
+                    <div id="eventsList"></div>
                 </div>
             </div>
+        </div>
 
-            <button class="btn-primary" style="margin-top: 24px;" onclick="calculateFDP()">Calculate Limit</button>
+        <div id="view-fdp" class="view">
+            <header>
+                <div class="header-center"><h1>FDP Calculator</h1></div>
+            </header>
 
-            <div id="results-container">
-                <div class="section-title">FDP Results</div>
+            <div class="container">
+                <div class="section-title">Duty Details</div>
                 <div class="ios-card">
                     <div class="ios-row">
-                        <span class="ios-label">Max FDP Allowed</span>
-                        <span class="result-val" id="r_maxFdp">------</span>
+                        <span class="ios-label">Check In (Local)</span>
+                        <div class="picker-group">
+                            <select id="ciHour"></select><span class="time-label">:</span><select id="ciMin"></select>
+                        </div>
                     </div>
                     <div class="ios-row">
-                        <span class="ios-label">FDP Expiry Time</span>
-                        <span class="result-val" id="r_expiry">------</span>
+                        <span class="ios-label">Sectors Today</span>
+                        <div class="picker-group">
+                            <select id="sectors">
+                                <option value="1">1 Sector</option><option value="2">2 Sectors</option>
+                                <option value="3">3 Sectors</option><option value="4">4 Sectors</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div class="section-title">Time Limits (Reverse Calc)</div>
+                <div class="section-title">Last Sector Times</div>
                 <div class="ios-card">
                     <div class="ios-row">
-                        <span class="ios-label">Latest Off Chock</span>
-                        <span class="result-val" id="r_pushback">------</span>
+                        <span class="ios-label">Taxi Before Take Off</span>
+                        <div class="picker-group"><select id="taxiOut"></select><span class="time-label">Mins</span></div>
                     </div>
                     <div class="ios-row">
-                        <span class="ios-label">Latest Take Off</span>
-                        <span class="result-val" id="r_takeoff">------</span>
+                        <span class="ios-label">Flight Time</span>
+                        <div class="picker-group"><select id="fltHour"></select><span class="time-label">H</span><select id="fltMin"></select><span class="time-label">M</span></div>
                     </div>
                     <div class="ios-row">
-                        <span class="ios-label">Latest Landing</span>
-                        <span class="result-val" id="r_landing">------</span>
+                        <span class="ios-label">Taxi After Landing</span>
+                        <div class="picker-group"><select id="taxiIn"></select><span class="time-label">Mins</span></div>
                     </div>
-                    <div class="ios-row">
-                        <span class="ios-label">Latest On Chock</span>
-                        <span class="result-val" id="r_onChock">------</span>
+                </div>
+
+                <button class="btn-primary" style="margin-top: 24px; width: 100%;" onclick="calculateFDP()">Calculate Limit</button>
+
+                <div id="results-container">
+                    <div class="section-title">FDP Results</div>
+                    <div class="ios-card">
+                        <div class="ios-row"><span class="ios-label">Max FDP Allowed</span><span class="result-val" id="r_maxFdp">------</span></div>
+                        <div class="ios-row"><span class="ios-label">FDP Expiry Time</span><span class="result-val" id="r_expiry">------</span></div>
+                    </div>
+
+                    <div class="section-title">Time Limits (Reverse Calc)</div>
+                    <div class="ios-card">
+                        <div class="ios-row"><span class="ios-label">Latest Off Chock</span><span class="result-val" id="r_pushback">------</span></div>
+                        <div class="ios-row"><span class="ios-label">Latest Take Off</span><span class="result-val" id="r_takeoff">------</span></div>
+                        <div class="ios-row"><span class="ios-label">Latest Landing</span><span class="result-val" id="r_landing">------</span></div>
+                        <div class="ios-row"><span class="ios-label">Latest On Chock</span><span class="result-val" id="r_onChock">------</span></div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-
-    <div id="view-logten" class="view">
-        <header>
-            <div class="header-center">
-                <h1>Logten Pro</h1>
+        <div id="view-logten" class="view">
+            <header>
+                <div class="header-center"><h1>Logten Pro</h1></div>
+            </header>
+            <div class="container dev-container">
+                <div class="dev-icon">🚧</div>
+                <h2>Logten Pro Auto Log</h2>
+                <p>Module is currently under development.</p>
             </div>
-        </header>
-        
-        <div class="container dev-container">
-            <div class="dev-icon">🚧</div>
-            <h2>Logten Pro Auto Log</h2>
-            <p>Module is currently under development.</p>
         </div>
-    </div>
 
-
-    <nav class="tab-bar">
+    </div> <nav class="tab-bar">
         <div class="tab-item active" onclick="switchTab('atis')">
             <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
             <span>ATIS</span>
@@ -448,560 +383,564 @@
         </div>
     </nav>
 
+</div> <script>
+    // --- 1. TAB BAR NAVIGATION LOGIC ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tab-item').forEach(v => v.classList.remove('active'));
+        
+        document.getElementById('view-' + tabId).classList.add('active');
+        document.querySelector(`.tab-item[onclick="switchTab('${tabId}')"]`).classList.add('active');
+        
+        // 確保切換標籤時，視圖回到頂端
+        document.getElementById('scroll-area').scrollTop = 0;
+    }
 
-    <script>
-        // --- 1. TAB BAR NAVIGATION LOGIC ---
-        function switchTab(tabId) {
-            // Hide all views
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            // Remove active state from all tabs
-            document.querySelectorAll('.tab-item').forEach(v => v.classList.remove('active'));
-            
-            // Show selected view and activate tab
-            document.getElementById('view-' + tabId).classList.add('active');
-            document.querySelector(`.tab-item[onclick="switchTab('${tabId}')"]`).classList.add('active');
-            
-            // Scroll to top when switching tabs
-            window.scrollTo(0,0);
+    // --- 2. ATIS LOGIC ---
+    const airportGroups = {
+        "Home Base": ["VHHH"],
+        "Taiwan": ["RCKH", "RCTP", "RCMQ"],
+        "North East Asia": ["RJAA", "RJBB", "RJFF", "RKPC", "RKSI"],
+        "South East Asia": ["VTBD", "VTBS", "VVDN", "VVNB", "WMKK", "WSSS"],
+        "North China": ["ZBAA", "ZBAD", "ZBTJ", "ZBYN", "ZHCC", "ZHHH"],
+        "East China": ["ZGGG", "ZGKL", "ZGNN", "ZGOW", "ZGSZ", "ZSAM", "ZSFZ", "ZSHC", "ZSNB", "ZSOF", "ZSPD", "ZSQD"],
+        "West China": ["ZUCK", "ZUGY", "ZUUU", "ZUTF"]
+    };
+    const allAirports = Object.values(airportGroups).flat();
+    let clickCount = 0;
+    let lastClickTime = 0;
+
+    function updateClocks() {
+        const now = new Date();
+        const hkt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong' }).format(now);
+        const utc = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' }).format(now);
+        document.getElementById('time-hkt').innerText = hkt;
+        document.getElementById('time-utc').innerText = utc;
+    }
+
+    async function handleSecretClick() {
+        const now = Date.now();
+        if (now - lastClickTime > 1000) clickCount = 0;
+        clickCount++;
+        lastClickTime = now;
+        if (clickCount === 5) {
+            clickCount = 0;
+            const token = prompt("Enter Admin Token to force Server Update:");
+            if (token) triggerGitHubAction(token);
         }
+    }
 
-        // --- 2. ATIS LOGIC (VERBATIM) ---
-        const airportGroups = {
-            "Home Base": ["VHHH"],
-            "Taiwan": ["RCKH", "RCTP", "RCMQ"],
-            "North East Asia": ["RJAA", "RJBB", "RJFF", "RKPC", "RKSI"],
-            "South East Asia": ["VTBD", "VTBS", "VVDN", "VVNB", "WMKK", "WSSS"],
-            "North China": ["ZBAA", "ZBAD", "ZBTJ", "ZBYN", "ZHCC", "ZHHH"],
-            "East China": ["ZGGG", "ZGKL", "ZGNN", "ZGOW", "ZGSZ", "ZSAM", "ZSFZ", "ZSHC", "ZSNB", "ZSOF", "ZSPD", "ZSQD"],
-            "West China": ["ZUCK", "ZUGY", "ZUUU", "ZUTF"]
-        };
-        const allAirports = Object.values(airportGroups).flat();
-        let clickCount = 0;
-        let lastClickTime = 0;
-
-        function updateClocks() {
-            const now = new Date();
-            const hkt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong' }).format(now);
-            const utc = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' }).format(now);
-            document.getElementById('time-hkt').innerText = hkt;
-            document.getElementById('time-utc').innerText = utc;
-        }
-
-        async function handleSecretClick() {
-            const now = Date.now();
-            if (now - lastClickTime > 1000) clickCount = 0;
-            clickCount++;
-            lastClickTime = now;
-            if (clickCount === 5) {
-                clickCount = 0;
-                const token = prompt("Enter Admin Token to force Server Update:");
-                if (token) triggerGitHubAction(token);
-            }
-        }
-
-        async function triggerGitHubAction(token) {
-            const owner = "damien8953";
-            const repo = "npilotx";
-            const workflowId = "main.yml";
-            const loader = document.getElementById('loader');
-            loader.innerText = "COMMAND SENT TO SERVER...";
-            loader.style.display = 'block';
-            try {
-                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`, {
-                    method: 'POST',
-                    headers: { 'Accept': 'application/vnd.github+json', 'Authorization': `Bearer ${token}`, 'X-GitHub-Api-Version': '2022-11-28' },
-                    body: JSON.stringify({ ref: 'main' })
-                });
-                if (response.ok) alert("🚀 Server task started! Data will refresh in 2 mins.");
-                else { const err = await response.json(); alert("❌ Failed: " + (err.message || "Auth Error")); }
-            } catch (e) { alert("❌ Connection Error"); } 
-            finally { loader.style.display = 'none'; loader.innerText = "SYNCING DATA..."; }
-        }
-
-        function getLatestZuluInfo(text) {
-            const regex = /(\d{4})Z/g;
-            let matches = text.match(regex);
-            if (!matches) return { zulu: "--", diffText: "", isWarning: false };
-            const now = new Date();
-            let bestZulu = "", minDiff = Infinity, finalDiffText = "", finalWarning = false;
-            matches.forEach(match => {
-                const zuluStr = match.replace('Z', '');
-                const hours = parseInt(zuluStr.substring(0, 2)), mins = parseInt(zuluStr.substring(2, 4));
-                let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
-                if (atisDate > now) atisDate.setUTCDate(atisDate.getUTCDate() - 1);
-                const diffMins = Math.floor((now - atisDate) / 60000);
-                if (diffMins < minDiff) {
-                    minDiff = diffMins; bestZulu = match;
-                    if (diffMins < 60) finalDiffText = ` (${diffMins}m ago)`;
-                    else finalDiffText = ` (${Math.floor(diffMins/60)}h ${diffMins%60}m ago)`;
-                    finalWarning = diffMins > 120;
-                }
+    async function triggerGitHubAction(token) {
+        const owner = "damien8953";
+        const repo = "npilotx";
+        const workflowId = "main.yml";
+        const loader = document.getElementById('loader');
+        loader.innerText = "COMMAND SENT TO SERVER...";
+        loader.style.display = 'block';
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/vnd.github+json', 'Authorization': `Bearer ${token}`, 'X-GitHub-Api-Version': '2022-11-28' },
+                body: JSON.stringify({ ref: 'main' })
             });
-            return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
-        }
+            if (response.ok) alert("🚀 Server task started! Data will refresh in 2 mins.");
+            else { const err = await response.json(); alert("❌ Failed: " + (err.message || "Auth Error")); }
+        } catch (e) { alert("❌ Connection Error"); } 
+        finally { loader.style.display = 'none'; loader.innerText = "SYNCING DATA..."; }
+    }
 
-        function formatUpdateDate(timeStr) {
-            if (!timeStr) return "--";
-            try { const parts = timeStr.match(/\d+/g); return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT`; } 
-            catch(e) { return timeStr; }
-        }
-
-        function renderUI() {
-            const list = document.getElementById('airport-list');
-            list.innerHTML = '';
-            for (const [groupName, icaoList] of Object.entries(airportGroups)) {
-                const title = document.createElement('div');
-                title.className = 'category-header'; title.innerText = groupName;
-                list.appendChild(title);
-                icaoList.forEach(icao => {
-                    const card = document.createElement('div');
-                    card.className = 'airport-card';
-                    card.id = `card-${icao}`;
-                    card.innerHTML = `
-                        <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
-                            <div class="icao-box">
-                                <span class="icao-name">${icao}</span>
-                                <span class="atis-zulu-tag">LAST ATIS: <span id="zulu-time-${icao}">--</span><span id="zulu-age-${icao}" class="atis-age-span"></span></span>
-                            </div>
-                            <div class="chevron"></div>
-                        </div>
-                        <div class="card-content"><div class="atis-text" id="atis-${icao}">Syncing...</div></div>
-                    `;
-                    list.appendChild(card);
-                });
+    function getLatestZuluInfo(text) {
+        const regex = /(\d{4})Z/g;
+        let matches = text.match(regex);
+        if (!matches) return { zulu: "--", diffText: "", isWarning: false };
+        const now = new Date();
+        let bestZulu = "", minDiff = Infinity, finalDiffText = "", finalWarning = false;
+        matches.forEach(match => {
+            const zuluStr = match.replace('Z', '');
+            const hours = parseInt(zuluStr.substring(0, 2)), mins = parseInt(zuluStr.substring(2, 4));
+            let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
+            if (atisDate > now) atisDate.setUTCDate(atisDate.getUTCDate() - 1);
+            const diffMins = Math.floor((now - atisDate) / 60000);
+            if (diffMins < minDiff) {
+                minDiff = diffMins; bestZulu = match;
+                if (diffMins < 60) finalDiffText = ` (${diffMins}m ago)`;
+                else finalDiffText = ` (${Math.floor(diffMins/60)}h ${diffMins%60}m ago)`;
+                finalWarning = diffMins > 120;
             }
-        }
-
-        async function refreshData() {
-            const btn = document.getElementById('update-btn');
-            btn.innerText = "Syncing...";
-            document.getElementById('loader').style.display = 'block';
-            try {
-                const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error("JSON Error");
-                const allData = await response.json();
-                let firstUpdateFound = false;
-                for (const icao of allAirports) {
-                    const text = allData[icao];
-                    if (!text) continue;
-                    const lines = text.split('\n');
-                    const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
-                    const content = lines.slice(4).join('\n').trim();
-                    if (!firstUpdateFound && timeLine) {
-                        document.getElementById('global-server-update').innerText = formatUpdateDate(timeLine);
-                        firstUpdateFound = true;
-                    }
-                    const atisInfo = getLatestZuluInfo(content);
-                    document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
-                    const ageEl = document.getElementById(`zulu-age-${icao}`);
-                    ageEl.innerText = atisInfo.diffText;
-                    ageEl.className = 'atis-age-span' + (atisInfo.isWarning ? ' warning' : '');
-                    document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
-                }
-            } catch (e) { console.error(e); }
-            setTimeout(() => { 
-                document.getElementById('loader').style.display = 'none';
-                btn.innerText = "Sync Data";
-            }, 600);
-        }
-
-        // --- 3. ROSTER LOGIC (VERBATIM) ---
-        let generatedEvents = [];
-        let icsContent = "";
-
-        const SPECIAL_CODES = {
-            'DDO': 'Domestic Day Off', 'AL-P': 'Annual Leave', 'CH': 'Company Holiday', 'CH+': 'Company Holiday',
-            'TN-SEC': 'Ground Training - Security', 'SEC': 'Ground Training - Security',
-            'TN-W&B': 'Ground Training - Weight and Balance', 'W&B': 'Ground Training - Weight and Balance',
-            'TN-SEP1': 'Ground Training - Safety and Emergency Procedure 1', 'SEP1': 'Ground Training - Safety and Emergency Procedure 1',
-            'TN-SEP2': 'Ground Training - Safety and Emergency Procedure 2', 'SEP2': 'Ground Training - Safety and Emergency Procedure 2',
-            'TN-CRM': 'Ground Training - Crew Resource Management', 'CRM': 'Ground Training - Crew Resource Management',
-            'EL-CW': 'E-Learning Adverse Winter Weather', 'EL-HW': 'E-Learning Adverse Summer Weather',
-            'EL-ACUR': 'E-Learning Aircraft Up Set Recovery', 'EL-DG': 'E-Learning Dangerous Goods',
-            'safety_awareness': 'Ground Training - Safety Awareness', 'GD': 'Ground Duty'
-        };
-
-        const OUTSTATION_TIMINGS = {
-            'NX909': { wake: 160, pick: 100 }, 'NX181': { wake: 130, pick: 70 },
-            'NX825': { wake: 150, pick: 90 }, 'NX821': { wake: 150, pick: 90 },
-            'NX657': { wake: 150, pick: 90 }, 'NX667': { wake: 150, pick: 90 },
-            'NX175': { wake: 130, pick: 70 }, 'NX165': { wake: 150, pick: 90 },
-            'NX161': { wake: 150, pick: 90 }, 'NX007': { wake: 160, pick: 100 },
-            'NX005': { wake: 170, pick: 110 }, 'NX137': { wake: 160, pick: 100 },
-            'NX109': { wake: 160, pick: 100 }, 'NX189': { wake: 135, pick: 75 },
-            'NX197': { wake: 135, pick: 75 }, 'NX121': { wake: 150, pick: 90 },
-            'NX225': { wake: 150, pick: 90 }, 'NX683': { wake: 150, pick: 90 }
-        };
-
-        function getTimeZoneOffset(apt) {
-            if (['NRT', 'KIX', 'FUK', 'ICN'].includes(apt)) return 9; 
-            if (['BKK', 'HAN', 'DAD', 'SGN'].includes(apt)) return 7; 
-            return 8; 
-        }
-
-        function formatICSDate(dateObj) {
-            return dateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        }
-
-        function formatDateForPreview(d) {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            const hh = String(d.getHours()).padStart(2, '0');
-            const mm = String(d.getMinutes()).padStart(2, '0');
-            const ss = String(d.getSeconds()).padStart(2, '0');
-            return `${y}/${m}/${day} ${hh}:${mm}:${ss}`;
-        }
-
-        function generateUID() {
-            return Math.random().toString(36).substring(2) + Date.now().toString(36) + '@nxdecoder.local';
-        }
-
-        function getUTCDate(year, monthIdx, day, timeStr, apt) {
-            let h = parseInt(timeStr.substring(0, 2));
-            let m = parseInt(timeStr.substring(2, 4));
-            let offset = getTimeZoneOffset(apt);
-            return new Date(Date.UTC(year, monthIdx, day, h - offset, m));
-        }
-
-        function addICSEvent(summary, location, startObj, endObj, isAllDay = false, alertMins = null) {
-            let evt = "BEGIN:VEVENT\n";
-            evt += `UID:${generateUID()}\n`;
-            evt += `DTSTAMP:${formatICSDate(new Date())}\n`;
-            evt += `SUMMARY:${summary}\n`;
-            if (location) evt += `LOCATION:${location}\n`;
-
-            if (isAllDay) {
-                let startStr = `${startObj.getFullYear()}${String(startObj.getMonth() + 1).padStart(2, '0')}${String(startObj.getDate()).padStart(2, '0')}`;
-                let endDate = new Date(startObj);
-                endDate.setDate(endDate.getDate() + 1);
-                let endStr = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}`;
-                evt += `DTSTART;VALUE=DATE:${startStr}\n`;
-                evt += `DTEND;VALUE=DATE:${endStr}\n`;
-            } else {
-                evt += `DTSTART:${formatICSDate(startObj)}\n`;
-                evt += `DTEND:${formatICSDate(endObj)}\n`;
-            }
-
-            if (alertMins !== null) {
-                evt += "BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\n";
-                evt += `TRIGGER:-PT${alertMins}M\nEND:VALARM\n`;
-            }
-            evt += "END:VEVENT\n";
-            icsContent += evt;
-
-            const dateStr = isAllDay ? `${startObj.getFullYear()}/${String(startObj.getMonth() + 1).padStart(2, '0')}/${String(startObj.getDate()).padStart(2, '0')}` : `${formatDateForPreview(startObj)} - ${formatDateForPreview(endObj)}`;
-
-            generatedEvents.push({ 
-                title: summary, 
-                details: isAllDay ? `All Day | ${dateStr}` : `${dateStr} | ${location}` 
-            });
-        }
-
-        function processRoster() {
-            let rawInput = document.getElementById('rosterInput').value.trim();
-            if (!rawInput) return;
-
-            let activeYear = parseInt(document.getElementById('yearSelect').value);
-            let activeMonthIdx = parseInt(document.getElementById('monthSelect').value);
-
-            let cleanInput = rawInput.replace(/safety awareness/gi, 'safety_awareness');
-            const tokens = cleanInput.split(/\s+/);
-            
-            let lines = [];
-            let currentLine = [];
-            const isLineStarter = (token) => {
-                if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{1,2}$/i.test(token)) return true;
-                if (/^C\/I$/i.test(token)) return true;
-                if (/^C\/O$/i.test(token)) return true;
-                if (/^NX\d{3,4}$/i.test(token)) return true;
-                if (/^SIM$/i.test(token)) return true;
-                if (/^(DDO|AL-P|CH\+|CH|TN-SEC|SEC|TN-W&B|W&B|TN-SEP1|SEP1|TN-SEP2|SEP2|TN-CRM|CRM|EL-CW|EL-HW|EL-ACUR|EL-DG|GD|safety_awareness)$/i.test(token)) return true;
-                if (/^(S[1-6]|S\*)$/i.test(token)) return true;
-                return false;
-            };
-
-            for (let token of tokens) {
-                if (isLineStarter(token)) {
-                    if (currentLine.length > 0) { lines.push(currentLine.join(' ')); currentLine = []; }
-                }
-                currentLine.push(token);
-            }
-            if (currentLine.length > 0) lines.push(currentLine.join(' '));
-
-            generatedEvents = [];
-            icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//NX Decoder//Offline HTML//EN\n";
-            
-            let activeDay = -1;
-            let previousDay = -1;
-            let pendingOutstationCI = null;
-            let lastEventTime = null; 
-
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (!line) continue;
-
-                let dayMatch = line.match(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)(\d{1,2})/i);
-                if (dayMatch) {
-                    let day = parseInt(dayMatch[1]);
-                    if (previousDay !== -1 && day < previousDay) {
-                        activeMonthIdx++; 
-                        if (activeMonthIdx > 11) { activeMonthIdx = 0; activeYear++; }
-                    }
-                    activeDay = day; previousDay = day; lastEventTime = null; 
-                    continue;
-                }
-
-                if (activeDay === -1) continue;
-
-                let ciMatch = line.match(/^C\/I\s+([A-Z]{3})\s+(\d{4})/i);
-                if (ciMatch) {
-                    let apt = ciMatch[1].toUpperCase();
-                    let time = ciMatch[2];
-                    let utcTime = getUTCDate(activeYear, activeMonthIdx, activeDay, time, apt);
-                    let location = (apt === 'MFM') ? 'Macau International Airport' : `${apt} Layover Hotel`;
-                    addICSEvent('Check In', location, utcTime, utcTime, false, 30);
-                    if (apt !== 'MFM') pendingOutstationCI = { apt: apt, dateObj: utcTime };
-                    lastEventTime = new Date(utcTime);
-                    continue;
-                }
-
-                let fltMatch = line.match(/(NX\d{3,4})\s+([A-Z]{3})\s+!?(\d{4})\s+!?(\d{4})\s+([A-Z]{3})/i);
-                if (fltMatch) {
-                    let fltNum = fltMatch[1].toUpperCase();
-                    let depApt = fltMatch[2].toUpperCase();
-                    let depTime = fltMatch[3];
-                    let arrTime = fltMatch[4];
-                    let arrApt = fltMatch[5].toUpperCase();
-                    let depUtc = getUTCDate(activeYear, activeMonthIdx, activeDay, depTime, depApt);
-                    let arrUtc = getUTCDate(activeYear, activeMonthIdx, activeDay, arrTime, arrApt);
-                    if (lastEventTime && depUtc < lastEventTime) { depUtc.setUTCDate(depUtc.getUTCDate() + 1); arrUtc.setUTCDate(arrUtc.getUTCDate() + 1); }
-                    if (arrUtc < depUtc) arrUtc.setUTCDate(arrUtc.getUTCDate() + 1);
-                    addICSEvent(`${fltNum} ${depApt} > ${arrApt}`, `${depApt} > ${arrApt}`, depUtc, arrUtc);
-                    lastEventTime = new Date(arrUtc);
-                    if (pendingOutstationCI && pendingOutstationCI.apt === depApt) {
-                        let rules = OUTSTATION_TIMINGS[fltNum];
-                        if (rules) {
-                            let hotelLoc = `${depApt} Layover Hotel`;
-                            let wakeUtc = new Date(depUtc.getTime() - (rules.wake * 60000));
-                            let pickUtc = new Date(depUtc.getTime() - (rules.pick * 60000));
-                            addICSEvent(`Wake Up (${fltNum})`, hotelLoc, wakeUtc, wakeUtc, false, 0);
-                            addICSEvent(`Pick Up (${fltNum})`, hotelLoc, pickUtc, pickUtc, false, 0);
-                        }
-                        pendingOutstationCI = null; 
-                    }
-                    continue;
-                }
-
-                let coMatch = line.match(/^C\/O\s+(\d{4})\s+([A-Z]{3})/i);
-                if (coMatch) {
-                    let time = coMatch[1];
-                    let apt = coMatch[2].toUpperCase();
-                    let utcTime = getUTCDate(activeYear, activeMonthIdx, activeDay, time, apt);
-                    if (lastEventTime && utcTime < lastEventTime) utcTime.setUTCDate(utcTime.getUTCDate() + 1);
-                    let location = (apt === 'MFM') ? 'Macau International Airport' : `${apt} Layover Hotel`;
-                    addICSEvent('Check Out', location, utcTime, utcTime);
-                    lastEventTime = new Date(utcTime);
-                    continue;
-                }
-
-                let sbMatch = line.match(/^(S[1-6\*])\s+(\d{4})\s+(\d{4})\s+(\d{4})/i);
-                if (sbMatch) {
-                    let code = sbMatch[1].toUpperCase();
-                    let start = sbMatch[3]; let end = sbMatch[4];
-                    let title = `Home Standby ${code} Duty`;
-                    if (code === 'S*') title = 'Home Standby Special Duty';
-                    let dStart = getUTCDate(activeYear, activeMonthIdx, activeDay, start, 'MFM');
-                    let dEnd = getUTCDate(activeYear, activeMonthIdx, activeDay, end, 'MFM');
-                    if (dEnd < dStart) dEnd.setUTCDate(dEnd.getUTCDate() + 1);
-                    addICSEvent(title, 'Home', dStart, dEnd);
-                    continue;
-                }
-
-                let simRegex = /^SIM\s+(\d{4})\s+(\d{4})\s+(\d{4})\s+(\d{4})/i;
-                let simMatch = line.match(simRegex);
-                if (simMatch) {
-                    let cIn = simMatch[1], sStart = simMatch[2], sEnd = simMatch[3], cOut = simMatch[4];
-                    let t1 = getUTCDate(activeYear, activeMonthIdx, activeDay, cIn, 'MFM');
-                    let t2 = getUTCDate(activeYear, activeMonthIdx, activeDay, sStart, 'MFM');
-                    let t3 = getUTCDate(activeYear, activeMonthIdx, activeDay, sEnd, 'MFM');
-                    let t4 = getUTCDate(activeYear, activeMonthIdx, activeDay, cOut, 'MFM');
-                    addICSEvent('Check In', 'Macau International Airport', t1, t1, false, 30);
-                    addICSEvent('Simulator Duty', 'Macau (MFM)', t2, t3);
-                    addICSEvent('Check Out', 'Macau International Airport', t4, t4);
-                    continue;
-                }
-
-                let isSpecialCode = false;
-                let codeKeys = Object.keys(SPECIAL_CODES).concat(['S1','S2','S3','S4','S5','S6','S*']);
-                for (let code of codeKeys) {
-                    let regex = new RegExp(`^${code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, 'i');
-                    if (regex.test(line)) {
-                        let title = SPECIAL_CODES[code] || `Home Standby ${code} Duty`;
-                        if (code === 'S*') title = 'Home Standby Special Duty';
-                        let isAllDay = ['DDO', 'AL-P', 'CH', 'CH+'].includes(code.toUpperCase());
-                        let dBase = new Date(activeYear, activeMonthIdx, activeDay);
-                        let loc = title.includes('Standby') ? 'Home' : 'Macau (MFM)';
-                        addICSEvent(title, loc, dBase, dBase, isAllDay);
-                        isSpecialCode = true;
-                        break;
-                    }
-                }
-                if (isSpecialCode) continue;
-            }
-
-            if (generatedEvents.length === 0) { alert("Roster Code Error"); return; }
-            icsContent += "END:VCALENDAR";
-            renderPreview();
-        }
-
-        function renderPreview() {
-            const listDiv = document.getElementById('eventsList');
-            listDiv.innerHTML = '';
-            generatedEvents.forEach(ev => {
-                let item = document.createElement('div');
-                item.className = 'event-item';
-                item.innerHTML = `<div class="event-title">${ev.title}</div><div class="event-details">${ev.details}</div>`;
-                listDiv.appendChild(item);
-            });
-            document.getElementById('preview-section').style.display = 'block';
-            document.getElementById('downloadBtn').style.display = 'block';
-        }
-
-        function downloadICS() {
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `NX_Roster_Decoded.ics`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
-
-        function initRoster() {
-            const now = new Date();
-            const yearSelect = document.getElementById('yearSelect');
-            const monthSelect = document.getElementById('monthSelect');
-            const currentYear = now.getFullYear();
-            for (let i = currentYear - 1; i <= currentYear + 2; i++) {
-                let opt = document.createElement('option');
-                opt.value = i; opt.text = i;
-                if (i === currentYear) opt.selected = true;
-                yearSelect.appendChild(opt);
-            }
-            monthSelect.value = now.getMonth();
-        }
-
-        // --- 4. FDP LOGIC (VERBATIM) ---
-        function populateSelect(id, min, max, defaultVal, padZero) {
-            const el = document.getElementById(id);
-            for(let i = min; i <= max; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.innerHTML = padZero ? String(i).padStart(2, '0') : i;
-                if(i === defaultVal) opt.selected = true;
-                el.appendChild(opt);
-            }
-        }
-
-        function initFDP() {
-            populateSelect('ciHour', 0, 23, 7, true);   
-            populateSelect('ciMin', 0, 59, 0, true);    
-            populateSelect('fltHour', 0, 16, 2, true);  
-            populateSelect('fltMin', 0, 59, 30, true);  
-            populateSelect('taxiOut', 0, 60, 15, false); 
-            populateSelect('taxiIn', 0, 60, 15, false);  
-        }
-
-        function calculateFDP() {
-            const ciH = parseInt(document.getElementById('ciHour').value);
-            const ciM = parseInt(document.getElementById('ciMin').value);
-            const sectors = parseInt(document.getElementById('sectors').value);
-            const fltH = parseInt(document.getElementById('fltHour').value);
-            const fltM = parseInt(document.getElementById('fltMin').value);
-            const taxiOut = parseInt(document.getElementById('taxiOut').value);
-            const taxiIn = parseInt(document.getElementById('taxiIn').value);
-
-            const ciTotalMins = (ciH * 60) + ciM;
-            let maxFdpMins = 0;
-            if (ciTotalMins >= 420 && ciTotalMins <= 479) { 
-                maxFdpMins = [13*60, 12*60+15, 11*60+30, 10*60+45][sectors-1];
-            } else if (ciTotalMins >= 480 && ciTotalMins <= 779) { 
-                maxFdpMins = [14*60, 13*60+15, 12*60+30, 11*60+45][sectors-1];
-            } else if (ciTotalMins >= 780 && ciTotalMins <= 1079) { 
-                maxFdpMins = [13*60, 12*60+15, 11*60+30, 10*60+45][sectors-1];
-            } else if (ciTotalMins >= 1080 && ciTotalMins <= 1319) { 
-                maxFdpMins = [12*60, 11*60+15, 10*60+30, 9*60+45][sectors-1];
-            } else { 
-                maxFdpMins = [11*60, 10*60+15, 9*60+30, 9*60][sectors-1];
-            }
-
-            const expiryMins = ciTotalMins + maxFdpMins;
-            const onChockMins = expiryMins; 
-            const landingMins = onChockMins - taxiIn; 
-            const flightTotalMins = (fltH * 60) + fltM;
-            const takeoffMins = landingMins - flightTotalMins; 
-            const pushbackMins = takeoffMins - taxiOut; 
-
-            const formatTime = (totalMins) => {
-                let m = totalMins % (24 * 60);
-                if (m < 0) m += (24 * 60); 
-                const h = Math.floor(m / 60);
-                const mins = m % 60;
-                let dayOffset = Math.floor(totalMins / (24 * 60));
-                let dayStr = "";
-                if (dayOffset > 0) dayStr = ` <span class="day-offset">(+${dayOffset} Day)</span>`;
-                if (dayOffset < 0) dayStr = ` <span class="day-offset">(-${Math.abs(dayOffset)} Day)</span>`;
-                return `${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}${dayStr}`;
-            };
-
-            const fdpTextH = Math.floor(maxFdpMins / 60);
-            const fdpTextM = maxFdpMins % 60;
-            
-            const elMaxFdp = document.getElementById('r_maxFdp');
-            elMaxFdp.innerHTML = `${fdpTextH}H ${fdpTextM > 0 ? fdpTextM + 'M' : ''}`;
-            elMaxFdp.className = "result-val highlight-active";
-
-            const elExpiry = document.getElementById('r_expiry');
-            elExpiry.innerHTML = formatTime(expiryMins);
-            elExpiry.className = "result-val critical-active";
-
-            const elOnChock = document.getElementById('r_onChock');
-            elOnChock.innerHTML = formatTime(onChockMins);
-            elOnChock.className = "result-val critical-active";
-
-            const elLanding = document.getElementById('r_landing');
-            elLanding.innerHTML = formatTime(landingMins);
-            elLanding.className = "result-val normal-active";
-
-            const elTakeoff = document.getElementById('r_takeoff');
-            elTakeoff.innerHTML = formatTime(takeoffMins);
-            elTakeoff.className = "result-val normal-active";
-
-            const elPushback = document.getElementById('r_pushback');
-            elPushback.innerHTML = formatTime(pushbackMins);
-            elPushback.className = "result-val normal-active";
-
-            setTimeout(() => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }, 100);
-        }
-
-        // --- 5. INITIALIZATION ON LOAD ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // ATIS Init
-            renderUI(); 
-            updateClocks(); 
-            refreshData(); 
-            setInterval(refreshData, 300000);
-            setInterval(updateClocks, 1000); // 獨立抽出 ATIS 的秒針更新
-
-            // Roster Init
-            initRoster();
-
-            // FDP Init
-            initFDP();
         });
+        return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
+    }
 
-    </script>
+    function formatUpdateDate(timeStr) {
+        if (!timeStr) return "--";
+        try { const parts = timeStr.match(/\d+/g); return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT`; } 
+        catch(e) { return timeStr; }
+    }
+
+    function renderUI() {
+        const list = document.getElementById('airport-list');
+        list.innerHTML = '';
+        for (const [groupName, icaoList] of Object.entries(airportGroups)) {
+            const title = document.createElement('div');
+            title.className = 'category-header'; title.innerText = groupName;
+            list.appendChild(title);
+            icaoList.forEach(icao => {
+                const card = document.createElement('div');
+                card.className = 'airport-card';
+                card.id = `card-${icao}`;
+                card.innerHTML = `
+                    <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
+                        <div class="icao-box">
+                            <span class="icao-name">${icao}</span>
+                            <span class="atis-zulu-tag">LAST ATIS: <span id="zulu-time-${icao}">--</span><span id="zulu-age-${icao}" class="atis-age-span"></span></span>
+                        </div>
+                        <div class="chevron"></div>
+                    </div>
+                    <div class="card-content"><div class="atis-text" id="atis-${icao}">Syncing...</div></div>
+                `;
+                list.appendChild(card);
+            });
+        }
+    }
+
+    async function refreshData() {
+        const btn = document.getElementById('update-btn');
+        btn.innerText = "Syncing...";
+        document.getElementById('loader').style.display = 'block';
+        try {
+            const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
+            if (!response.ok) throw new Error("JSON Error");
+            const allData = await response.json();
+            let firstUpdateFound = false;
+            for (const icao of allAirports) {
+                const text = allData[icao];
+                if (!text) continue;
+                const lines = text.split('\n');
+                const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
+                const content = lines.slice(4).join('\n').trim();
+                if (!firstUpdateFound && timeLine) {
+                    document.getElementById('global-server-update').innerText = formatUpdateDate(timeLine);
+                    firstUpdateFound = true;
+                }
+                const atisInfo = getLatestZuluInfo(content);
+                document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
+                const ageEl = document.getElementById(`zulu-age-${icao}`);
+                ageEl.innerText = atisInfo.diffText;
+                ageEl.className = 'atis-age-span' + (atisInfo.isWarning ? ' warning' : '');
+                document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
+            }
+        } catch (e) { console.error(e); }
+        setTimeout(() => { 
+            document.getElementById('loader').style.display = 'none';
+            btn.innerText = "Sync Data";
+        }, 600);
+    }
+
+    // --- 3. ROSTER LOGIC ---
+    let generatedEvents = [];
+    let icsContent = "";
+
+    const SPECIAL_CODES = {
+        'DDO': 'Domestic Day Off', 'AL-P': 'Annual Leave', 'CH': 'Company Holiday', 'CH+': 'Company Holiday',
+        'TN-SEC': 'Ground Training - Security', 'SEC': 'Ground Training - Security',
+        'TN-W&B': 'Ground Training - Weight and Balance', 'W&B': 'Ground Training - Weight and Balance',
+        'TN-SEP1': 'Ground Training - Safety and Emergency Procedure 1', 'SEP1': 'Ground Training - Safety and Emergency Procedure 1',
+        'TN-SEP2': 'Ground Training - Safety and Emergency Procedure 2', 'SEP2': 'Ground Training - Safety and Emergency Procedure 2',
+        'TN-CRM': 'Ground Training - Crew Resource Management', 'CRM': 'Ground Training - Crew Resource Management',
+        'EL-CW': 'E-Learning Adverse Winter Weather', 'EL-HW': 'E-Learning Adverse Summer Weather',
+        'EL-ACUR': 'E-Learning Aircraft Up Set Recovery', 'EL-DG': 'E-Learning Dangerous Goods',
+        'safety_awareness': 'Ground Training - Safety Awareness', 'GD': 'Ground Duty'
+    };
+
+    const OUTSTATION_TIMINGS = {
+        'NX909': { wake: 160, pick: 100 }, 'NX181': { wake: 130, pick: 70 },
+        'NX825': { wake: 150, pick: 90 }, 'NX821': { wake: 150, pick: 90 },
+        'NX657': { wake: 150, pick: 90 }, 'NX667': { wake: 150, pick: 90 },
+        'NX175': { wake: 130, pick: 70 }, 'NX165': { wake: 150, pick: 90 },
+        'NX161': { wake: 150, pick: 90 }, 'NX007': { wake: 160, pick: 100 },
+        'NX005': { wake: 170, pick: 110 }, 'NX137': { wake: 160, pick: 100 },
+        'NX109': { wake: 160, pick: 100 }, 'NX189': { wake: 135, pick: 75 },
+        'NX197': { wake: 135, pick: 75 }, 'NX121': { wake: 150, pick: 90 },
+        'NX225': { wake: 150, pick: 90 }, 'NX683': { wake: 150, pick: 90 }
+    };
+
+    function getTimeZoneOffset(apt) {
+        if (['NRT', 'KIX', 'FUK', 'ICN'].includes(apt)) return 9; 
+        if (['BKK', 'HAN', 'DAD', 'SGN'].includes(apt)) return 7; 
+        return 8; 
+    }
+
+    function formatICSDate(dateObj) {
+        return dateObj.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    }
+
+    function formatDateForPreview(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        return `${y}/${m}/${day} ${hh}:${mm}:${ss}`;
+    }
+
+    function generateUID() {
+        return Math.random().toString(36).substring(2) + Date.now().toString(36) + '@nxdecoder.local';
+    }
+
+    function getUTCDate(year, monthIdx, day, timeStr, apt) {
+        let h = parseInt(timeStr.substring(0, 2));
+        let m = parseInt(timeStr.substring(2, 4));
+        let offset = getTimeZoneOffset(apt);
+        return new Date(Date.UTC(year, monthIdx, day, h - offset, m));
+    }
+
+    function addICSEvent(summary, location, startObj, endObj, isAllDay = false, alertMins = null) {
+        let evt = "BEGIN:VEVENT\n";
+        evt += `UID:${generateUID()}\n`;
+        evt += `DTSTAMP:${formatICSDate(new Date())}\n`;
+        evt += `SUMMARY:${summary}\n`;
+        if (location) evt += `LOCATION:${location}\n`;
+
+        if (isAllDay) {
+            let startStr = `${startObj.getFullYear()}${String(startObj.getMonth() + 1).padStart(2, '0')}${String(startObj.getDate()).padStart(2, '0')}`;
+            let endDate = new Date(startObj);
+            endDate.setDate(endDate.getDate() + 1);
+            let endStr = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, '0')}${String(endDate.getDate()).padStart(2, '0')}`;
+            evt += `DTSTART;VALUE=DATE:${startStr}\n`;
+            evt += `DTEND;VALUE=DATE:${endStr}\n`;
+        } else {
+            evt += `DTSTART:${formatICSDate(startObj)}\n`;
+            evt += `DTEND:${formatICSDate(endObj)}\n`;
+        }
+
+        if (alertMins !== null) {
+            evt += "BEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Reminder\n";
+            evt += `TRIGGER:-PT${alertMins}M\nEND:VALARM\n`;
+        }
+        evt += "END:VEVENT\n";
+        icsContent += evt;
+
+        const dateStr = isAllDay ? `${startObj.getFullYear()}/${String(startObj.getMonth() + 1).padStart(2, '0')}/${String(startObj.getDate()).padStart(2, '0')}` : `${formatDateForPreview(startObj)} - ${formatDateForPreview(endObj)}`;
+
+        generatedEvents.push({ title: summary, details: isAllDay ? `All Day | ${dateStr}` : `${dateStr} | ${location}` });
+    }
+
+    // 新增：清空 Roster 功能
+    function clearRoster() {
+        document.getElementById('rosterInput').value = '';
+        document.getElementById('preview-section').style.display = 'none';
+        document.getElementById('downloadBtn').style.display = 'none';
+        generatedEvents = [];
+        icsContent = "";
+    }
+
+    function processRoster() {
+        let rawInput = document.getElementById('rosterInput').value.trim();
+        if (!rawInput) return;
+
+        let activeYear = parseInt(document.getElementById('yearSelect').value);
+        let activeMonthIdx = parseInt(document.getElementById('monthSelect').value);
+
+        let cleanInput = rawInput.replace(/safety awareness/gi, 'safety_awareness');
+        const tokens = cleanInput.split(/\s+/);
+        
+        let lines = [];
+        let currentLine = [];
+        const isLineStarter = (token) => {
+            if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{1,2}$/i.test(token)) return true;
+            if (/^C\/I$/i.test(token)) return true;
+            if (/^C\/O$/i.test(token)) return true;
+            if (/^NX\d{3,4}$/i.test(token)) return true;
+            if (/^SIM$/i.test(token)) return true;
+            if (/^(DDO|AL-P|CH\+|CH|TN-SEC|SEC|TN-W&B|W&B|TN-SEP1|SEP1|TN-SEP2|SEP2|TN-CRM|CRM|EL-CW|EL-HW|EL-ACUR|EL-DG|GD|safety_awareness)$/i.test(token)) return true;
+            if (/^(S[1-6]|S\*)$/i.test(token)) return true;
+            return false;
+        };
+
+        for (let token of tokens) {
+            if (isLineStarter(token)) {
+                if (currentLine.length > 0) { lines.push(currentLine.join(' ')); currentLine = []; }
+            }
+            currentLine.push(token);
+        }
+        if (currentLine.length > 0) lines.push(currentLine.join(' '));
+
+        generatedEvents = [];
+        icsContent = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//NX Decoder//Offline HTML//EN\n";
+        
+        let activeDay = -1;
+        let previousDay = -1;
+        let pendingOutstationCI = null;
+        let lastEventTime = null; 
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i].trim();
+            if (!line) continue;
+
+            let dayMatch = line.match(/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)(\d{1,2})/i);
+            if (dayMatch) {
+                let day = parseInt(dayMatch[1]);
+                if (previousDay !== -1 && day < previousDay) {
+                    activeMonthIdx++; 
+                    if (activeMonthIdx > 11) { activeMonthIdx = 0; activeYear++; }
+                }
+                activeDay = day; previousDay = day; lastEventTime = null; 
+                continue;
+            }
+
+            if (activeDay === -1) continue;
+
+            let ciMatch = line.match(/^C\/I\s+([A-Z]{3})\s+(\d{4})/i);
+            if (ciMatch) {
+                let apt = ciMatch[1].toUpperCase();
+                let time = ciMatch[2];
+                let utcTime = getUTCDate(activeYear, activeMonthIdx, activeDay, time, apt);
+                let location = (apt === 'MFM') ? 'Macau International Airport' : `${apt} Layover Hotel`;
+                addICSEvent('Check In', location, utcTime, utcTime, false, 30);
+                if (apt !== 'MFM') pendingOutstationCI = { apt: apt, dateObj: utcTime };
+                lastEventTime = new Date(utcTime);
+                continue;
+            }
+
+            let fltMatch = line.match(/(NX\d{3,4})\s+([A-Z]{3})\s+!?(\d{4})\s+!?(\d{4})\s+([A-Z]{3})/i);
+            if (fltMatch) {
+                let fltNum = fltMatch[1].toUpperCase();
+                let depApt = fltMatch[2].toUpperCase();
+                let depTime = fltMatch[3];
+                let arrTime = fltMatch[4];
+                let arrApt = fltMatch[5].toUpperCase();
+                let depUtc = getUTCDate(activeYear, activeMonthIdx, activeDay, depTime, depApt);
+                let arrUtc = getUTCDate(activeYear, activeMonthIdx, activeDay, arrTime, arrApt);
+                if (lastEventTime && depUtc < lastEventTime) { depUtc.setUTCDate(depUtc.getUTCDate() + 1); arrUtc.setUTCDate(arrUtc.getUTCDate() + 1); }
+                if (arrUtc < depUtc) arrUtc.setUTCDate(arrUtc.getUTCDate() + 1);
+                addICSEvent(`${fltNum} ${depApt} > ${arrApt}`, `${depApt} > ${arrApt}`, depUtc, arrUtc);
+                lastEventTime = new Date(arrUtc);
+                if (pendingOutstationCI && pendingOutstationCI.apt === depApt) {
+                    let rules = OUTSTATION_TIMINGS[fltNum];
+                    if (rules) {
+                        let hotelLoc = `${depApt} Layover Hotel`;
+                        let wakeUtc = new Date(depUtc.getTime() - (rules.wake * 60000));
+                        let pickUtc = new Date(depUtc.getTime() - (rules.pick * 60000));
+                        addICSEvent(`Wake Up (${fltNum})`, hotelLoc, wakeUtc, wakeUtc, false, 0);
+                        addICSEvent(`Pick Up (${fltNum})`, hotelLoc, pickUtc, pickUtc, false, 0);
+                    }
+                    pendingOutstationCI = null; 
+                }
+                continue;
+            }
+
+            let coMatch = line.match(/^C\/O\s+(\d{4})\s+([A-Z]{3})/i);
+            if (coMatch) {
+                let time = coMatch[1];
+                let apt = coMatch[2].toUpperCase();
+                let utcTime = getUTCDate(activeYear, activeMonthIdx, activeDay, time, apt);
+                if (lastEventTime && utcTime < lastEventTime) utcTime.setUTCDate(utcTime.getUTCDate() + 1);
+                let location = (apt === 'MFM') ? 'Macau International Airport' : `${apt} Layover Hotel`;
+                addICSEvent('Check Out', location, utcTime, utcTime);
+                lastEventTime = new Date(utcTime);
+                continue;
+            }
+
+            let sbMatch = line.match(/^(S[1-6\*])\s+(\d{4})\s+(\d{4})\s+(\d{4})/i);
+            if (sbMatch) {
+                let code = sbMatch[1].toUpperCase();
+                let start = sbMatch[3]; let end = sbMatch[4];
+                let title = `Home Standby ${code} Duty`;
+                if (code === 'S*') title = 'Home Standby Special Duty';
+                let dStart = getUTCDate(activeYear, activeMonthIdx, activeDay, start, 'MFM');
+                let dEnd = getUTCDate(activeYear, activeMonthIdx, activeDay, end, 'MFM');
+                if (dEnd < dStart) dEnd.setUTCDate(dEnd.getUTCDate() + 1);
+                addICSEvent(title, 'Home', dStart, dEnd);
+                continue;
+            }
+
+            let simRegex = /^SIM\s+(\d{4})\s+(\d{4})\s+(\d{4})\s+(\d{4})/i;
+            let simMatch = line.match(simRegex);
+            if (simMatch) {
+                let cIn = simMatch[1], sStart = simMatch[2], sEnd = simMatch[3], cOut = simMatch[4];
+                let t1 = getUTCDate(activeYear, activeMonthIdx, activeDay, cIn, 'MFM');
+                let t2 = getUTCDate(activeYear, activeMonthIdx, activeDay, sStart, 'MFM');
+                let t3 = getUTCDate(activeYear, activeMonthIdx, activeDay, sEnd, 'MFM');
+                let t4 = getUTCDate(activeYear, activeMonthIdx, activeDay, cOut, 'MFM');
+                addICSEvent('Check In', 'Macau International Airport', t1, t1, false, 30);
+                addICSEvent('Simulator Duty', 'Macau (MFM)', t2, t3);
+                addICSEvent('Check Out', 'Macau International Airport', t4, t4);
+                continue;
+            }
+
+            let isSpecialCode = false;
+            let codeKeys = Object.keys(SPECIAL_CODES).concat(['S1','S2','S3','S4','S5','S6','S*']);
+            for (let code of codeKeys) {
+                let regex = new RegExp(`^${code.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, 'i');
+                if (regex.test(line)) {
+                    let title = SPECIAL_CODES[code] || `Home Standby ${code} Duty`;
+                    if (code === 'S*') title = 'Home Standby Special Duty';
+                    let isAllDay = ['DDO', 'AL-P', 'CH', 'CH+'].includes(code.toUpperCase());
+                    let dBase = new Date(activeYear, activeMonthIdx, activeDay);
+                    let loc = title.includes('Standby') ? 'Home' : 'Macau (MFM)';
+                    addICSEvent(title, loc, dBase, dBase, isAllDay);
+                    isSpecialCode = true;
+                    break;
+                }
+            }
+            if (isSpecialCode) continue;
+        }
+
+        if (generatedEvents.length === 0) { alert("Roster Code Error"); return; }
+        icsContent += "END:VCALENDAR";
+        renderPreview();
+    }
+
+    function renderPreview() {
+        const listDiv = document.getElementById('eventsList');
+        listDiv.innerHTML = '';
+        generatedEvents.forEach(ev => {
+            let item = document.createElement('div');
+            item.className = 'event-item';
+            item.innerHTML = `<div class="event-title">${ev.title}</div><div class="event-details">${ev.details}</div>`;
+            listDiv.appendChild(item);
+        });
+        document.getElementById('preview-section').style.display = 'block';
+        document.getElementById('downloadBtn').style.display = 'block';
+        
+        // 渲染完後自動捲動到底部，方便使用者看到下載按鈕
+        setTimeout(() => {
+            const scrollArea = document.getElementById('scroll-area');
+            scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+        }, 100);
+    }
+
+    function downloadICS() {
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `NX_Roster_Decoded.ics`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    function initRoster() {
+        const now = new Date();
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        const currentYear = now.getFullYear();
+        for (let i = currentYear - 1; i <= currentYear + 2; i++) {
+            let opt = document.createElement('option');
+            opt.value = i; opt.text = i;
+            if (i === currentYear) opt.selected = true;
+            yearSelect.appendChild(opt);
+        }
+        monthSelect.value = now.getMonth();
+    }
+
+    // --- 4. FDP LOGIC ---
+    function populateSelect(id, min, max, defaultVal, padZero) {
+        const el = document.getElementById(id);
+        for(let i = min; i <= max; i++) {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerHTML = padZero ? String(i).padStart(2, '0') : i;
+            if(i === defaultVal) opt.selected = true;
+            el.appendChild(opt);
+        }
+    }
+
+    function initFDP() {
+        populateSelect('ciHour', 0, 23, 7, true);   
+        populateSelect('ciMin', 0, 59, 0, true);    
+        populateSelect('fltHour', 0, 16, 2, true);  
+        populateSelect('fltMin', 0, 59, 30, true);  
+        populateSelect('taxiOut', 0, 60, 15, false); 
+        populateSelect('taxiIn', 0, 60, 15, false);  
+    }
+
+    function calculateFDP() {
+        const ciH = parseInt(document.getElementById('ciHour').value);
+        const ciM = parseInt(document.getElementById('ciMin').value);
+        const sectors = parseInt(document.getElementById('sectors').value);
+        const fltH = parseInt(document.getElementById('fltHour').value);
+        const fltM = parseInt(document.getElementById('fltMin').value);
+        const taxiOut = parseInt(document.getElementById('taxiOut').value);
+        const taxiIn = parseInt(document.getElementById('taxiIn').value);
+
+        const ciTotalMins = (ciH * 60) + ciM;
+        let maxFdpMins = 0;
+        if (ciTotalMins >= 420 && ciTotalMins <= 479) { 
+            maxFdpMins = [13*60, 12*60+15, 11*60+30, 10*60+45][sectors-1];
+        } else if (ciTotalMins >= 480 && ciTotalMins <= 779) { 
+            maxFdpMins = [14*60, 13*60+15, 12*60+30, 11*60+45][sectors-1];
+        } else if (ciTotalMins >= 780 && ciTotalMins <= 1079) { 
+            maxFdpMins = [13*60, 12*60+15, 11*60+30, 10*60+45][sectors-1];
+        } else if (ciTotalMins >= 1080 && ciTotalMins <= 1319) { 
+            maxFdpMins = [12*60, 11*60+15, 10*60+30, 9*60+45][sectors-1];
+        } else { 
+            maxFdpMins = [11*60, 10*60+15, 9*60+30, 9*60][sectors-1];
+        }
+
+        const expiryMins = ciTotalMins + maxFdpMins;
+        const onChockMins = expiryMins; 
+        const landingMins = onChockMins - taxiIn; 
+        const flightTotalMins = (fltH * 60) + fltM;
+        const takeoffMins = landingMins - flightTotalMins; 
+        const pushbackMins = takeoffMins - taxiOut; 
+
+        const formatTime = (totalMins) => {
+            let m = totalMins % (24 * 60);
+            if (m < 0) m += (24 * 60); 
+            const h = Math.floor(m / 60);
+            const mins = m % 60;
+            let dayOffset = Math.floor(totalMins / (24 * 60));
+            let dayStr = "";
+            if (dayOffset > 0) dayStr = ` <span class="day-offset">(+${dayOffset} Day)</span>`;
+            if (dayOffset < 0) dayStr = ` <span class="day-offset">(-${Math.abs(dayOffset)} Day)</span>`;
+            return `${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}${dayStr}`;
+        };
+
+        const fdpTextH = Math.floor(maxFdpMins / 60);
+        const fdpTextM = maxFdpMins % 60;
+        
+        const elMaxFdp = document.getElementById('r_maxFdp');
+        elMaxFdp.innerHTML = `${fdpTextH}H ${fdpTextM > 0 ? fdpTextM + 'M' : ''}`;
+        elMaxFdp.className = "result-val highlight-active";
+
+        const elExpiry = document.getElementById('r_expiry');
+        elExpiry.innerHTML = formatTime(expiryMins);
+        elExpiry.className = "result-val critical-active";
+
+        const elOnChock = document.getElementById('r_onChock');
+        elOnChock.innerHTML = formatTime(onChockMins);
+        elOnChock.className = "result-val critical-active";
+
+        const elLanding = document.getElementById('r_landing');
+        elLanding.innerHTML = formatTime(landingMins);
+        elLanding.className = "result-val normal-active";
+
+        const elTakeoff = document.getElementById('r_takeoff');
+        elTakeoff.innerHTML = formatTime(takeoffMins);
+        elTakeoff.className = "result-val normal-active";
+
+        const elPushback = document.getElementById('r_pushback');
+        elPushback.innerHTML = formatTime(pushbackMins);
+        elPushback.className = "result-val normal-active";
+
+        setTimeout(() => {
+            const scrollArea = document.getElementById('scroll-area');
+            scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+        }, 100);
+    }
+
+    // --- 5. INITIALIZATION ON LOAD ---
+    document.addEventListener('DOMContentLoaded', () => {
+        renderUI(); 
+        updateClocks(); 
+        refreshData(); 
+        setInterval(refreshData, 300000);
+        setInterval(updateClocks, 1000); 
+
+        initRoster();
+        initFDP();
+    });
+</script>
 </body>
 </html>

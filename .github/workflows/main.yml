@@ -11,7 +11,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        airport: [VHHH, ZSAM, RCKH, RCTP, WSSS, ZGGG, VMMC]
+        airport: [
+          VHHH, VTBD, VTBS, VVDN, VVNB, 
+          RCKH, RCTP, RCMQ, 
+          RJAA, RJBB, RJFF, 
+          RKPC, RKSI, RKTU, 
+          WIII, WMKK, WSSS, 
+          ZBAA, ZBAD, ZBTJ, ZBYN, ZGGG, ZGKL, ZGNN, ZGOW, ZGSZ, 
+          ZHCC, ZHHH, ZSAM, ZSCG, ZSFZ, ZSHC, ZSNB, ZSOF, ZSPD, 
+          ZSQD, ZUCK, ZUGY, ZUUU, ZUTF
+        ]
 
     steps:
       - name: Checkout

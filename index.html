@@ -82,7 +82,6 @@
         .icao-box { display: flex; flex-direction: column; gap: 2px; }
         .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
         
-        /* ATIS Zulu Time Style */
         .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
         .atis-age-span { font-weight: 400; font-size: 11px; }
         .atis-age-span.warning { color: var(--accent-orange); }
@@ -144,42 +143,44 @@
         }
         setInterval(updateClocks, 1000);
 
-        function extractZuluTime(text) {
+        // 改良版解析：從所有時間中找出最接近現在的那個
+        function getLatestZuluInfo(text) {
             const regex = /(\d{4})Z/g;
             let matches = text.match(regex);
-            return (matches && matches.length > 0) ? matches[0].replace('Z','') : null;
-        }
+            if (!matches) return { zulu: "--", diffText: "", isWarning: false };
 
-        // 核心邏輯：計算 ATIS 報文與當前 UTC 的差距
-        function getAtisDiff(zuluStr) {
-            if (!zuluStr) return { text: "", isWarning: false };
-            
             const now = new Date();
-            const hours = parseInt(zuluStr.substring(0, 2));
-            const mins = parseInt(zuluStr.substring(2, 4));
+            let bestZulu = "";
+            let minDiff = Infinity;
+            let finalDiffText = "";
+            let finalWarning = false;
 
-            // 建立當前 UTC 日期的 ATIS 時間對象
-            let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
+            matches.forEach(match => {
+                const zuluStr = match.replace('Z', '');
+                const hours = parseInt(zuluStr.substring(0, 2));
+                const mins = parseInt(zuluStr.substring(2, 4));
 
-            // 如果解析出的時間比現在還晚，說明是「昨天」的報文
-            if (atisDate > now) {
-                atisDate.setUTCDate(atisDate.getUTCDate() - 1);
-            }
+                let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
+                if (atisDate > now) atisDate.setUTCDate(atisDate.getUTCDate() - 1);
 
-            const diffMins = Math.floor((now - atisDate) / 60000);
-            let ageText = "";
-            
-            if (diffMins < 60) ageText = `${diffMins}m ago`;
-            else {
-                const h = Math.floor(diffMins / 60);
-                const m = diffMins % 60;
-                ageText = (m === 0) ? `${h}h ago` : `${h}h ${m}m ago`;
-            }
+                const diffMins = Math.floor((now - atisDate) / 60000);
+                
+                // 找出差距最小的那一個
+                if (diffMins < minDiff) {
+                    minDiff = diffMins;
+                    bestZulu = match;
+                    
+                    if (diffMins < 60) finalDiffText = ` (${diffMins}m ago)`;
+                    else {
+                        const h = Math.floor(diffMins / 60);
+                        const m = diffMins % 60;
+                        finalDiffText = (m === 0) ? ` (${h}h ago)` : ` (${h}h ${m}m ago)`;
+                    }
+                    finalWarning = diffMins > 120;
+                }
+            });
 
-            return {
-                text: ` (${ageText})`,
-                isWarning: diffMins > 120 // 超過 2 小時顯示警告色
-            };
+            return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
         }
 
         function getTimeAgo(timeStr) {
@@ -235,18 +236,14 @@
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
-                    // 更新 Download 時間
                     document.getElementById(`dl-${icao}`).innerText = `DL: ${getTimeAgo(timeLine)}`;
 
-                    // 更新 ATIS Zulu 與 相對時間
-                    const rawZulu = extractZuluTime(content);
-                    if (rawZulu) {
-                        document.getElementById(`zulu-time-${icao}`).innerText = rawZulu + "Z";
-                        const diff = getAtisDiff(rawZulu);
-                        const ageEl = document.getElementById(`zulu-age-${icao}`);
-                        ageEl.innerText = diff.text;
-                        ageEl.className = 'atis-age-span' + (diff.isWarning ? ' warning' : '');
-                    }
+                    // 使用新的分析邏輯抓取「最接近現在」的時間
+                    const atisInfo = getLatestZuluInfo(content);
+                    document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
+                    const ageEl = document.getElementById(`zulu-age-${icao}`);
+                    ageEl.innerText = atisInfo.diffText;
+                    ageEl.className = 'atis-age-span' + (atisInfo.isWarning ? ' warning' : '');
 
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 } catch (e) { document.getElementById(`atis-${icao}`).innerText = "Syncing..."; }

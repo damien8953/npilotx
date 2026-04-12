@@ -23,14 +23,15 @@ jobs:
       - name: 執行抓取程式
         run: python3 main.py # 這裡改用 python3
 
-      - name: 檢查檔案內容 (除錯用)
-        run: cat atis_result.txt
+      - name: 檢查 VHHH 內容 (測試用)
+        run: cat atis_VHHH.txt # 改為檢查獨立檔案，而不是舊的總表
 
       - name: 將結果推回 GitHub
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # 關鍵修改：使用萬用字元 * 來加入所有 atis 開頭的 txt 檔案
           git add atis_*.txt
-          git commit -m "自動更新機場 ATIS 數據: $(date)" || echo "No changes to commit"
+          # 順便把舊的總表刪掉，免得礙眼
+          git rm atis_result.txt --ignore-unmatch 
+          git commit -m "自動更新 ATIS 數據: $(date)" || echo "No changes to commit"
           git push

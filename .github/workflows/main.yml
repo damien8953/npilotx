@@ -1,42 +1,31 @@
-name: Parallel ATIS Update
-
-on:
-  schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch: 
-
-jobs:
-  fetch-atis:
-    runs-on: ubuntu-latest
-    strategy:
-      # 重要：即使一個機場失敗，其他機場也要繼續跑
-      fail-fast: false 
-      matrix:
-        # 在這裡填入你公司所有的機場！
-        airport: [VHHH, ZSAM, RCKH, RCTP, WSSS, ZGGG, VMMC] 
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install requests beautifulsoup4
-
-      - name: Run Fetcher
-        # 這裡會根據矩陣自動帶入機場代碼
-        run: python main.py ${{ matrix.airport }}
-
-      - name: Push results
+- name: Push results
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # 關鍵：因為多個任務同時跑，推送前先 pull 以免衝突
-          git pull --rebase origin main
+          
+          # 1. 先把自己的變動加入暫存區
           git add atis_${{ matrix.airport }}.txt
+          
+          # 2. 先在本地提交存檔 (如果沒變動就跳過)
           git commit -m "Auto Update: ${{ matrix.airport }}" || exit 0
-          git push origin main
+          
+          # 3. 使用迴圈進行「拉取與推送」，應付多人同時擠進去的情況
+          # 嘗試最多 5 次，每次失敗會等 5 秒再試
+          for i in {1..5}; do
+            echo "Attempt $i: Syncing and Pushing..."
+            
+            # 先拉取雲端別人的更新，並把自己的 commit 接在後面 (rebase)
+            git pull --rebase origin main
+            
+            # 嘗試推送到 GitHub
+            if git push origin main; then
+              echo "✅ Successfully pushed ${{ matrix.airport }}"
+              exit 0
+            fi
+            
+            echo "⚠️ Push collision detected, retrying in 5s..."
+            sleep 5
+          done
+          
+          echo "❌ Failed to push after 5 attempts."
+          exit 1

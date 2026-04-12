@@ -37,7 +37,11 @@
             display: flex; justify-content: space-between; align-items: flex-start;
         }
 
-        .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        /* 秘密觸發器綁定在標題上 */
+        .header-left h1 { 
+            margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; 
+            user-select: none; /* 防止連點時選取文字 */
+        }
         
         .server-update-box { margin-top: 6px; }
         .server-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -109,7 +113,7 @@
 
     <header>
         <div class="header-left">
-            <h1>ATIS PRO</h1>
+            <h1 onclick="handleSecretClick()">ATIS PRO</h1>
             <div class="server-update-box">
                 <div class="server-label">Last Server Update:</div>
                 <div class="server-time" id="global-server-update">YYYY/MM/DD HH:MM HKT</div>
@@ -125,7 +129,7 @@
     </header>
 
     <div class="container" id="airport-list"></div>
-    <div id="loader">REFRESHING ALL AIRPORTS...</div>
+    <div id="loader">SYNCING DATA...</div>
 
     <script>
         const airportGroups = {
@@ -140,6 +144,10 @@
 
         const allAirports = Object.values(airportGroups).flat();
 
+        // 秘密點擊偵測變數
+        let clickCount = 0;
+        let lastClickTime = 0;
+
         function updateClocks() {
             const now = new Date();
             const hkt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong' }).format(now);
@@ -148,6 +156,55 @@
             document.getElementById('time-utc').innerText = utc;
         }
         setInterval(updateClocks, 1000);
+
+        // 處理隱藏彩蛋：5次連點標題
+        async function handleSecretClick() {
+            const now = Date.now();
+            if (now - lastClickTime > 1000) clickCount = 0;
+            clickCount++;
+            lastClickTime = now;
+
+            if (clickCount === 5) {
+                clickCount = 0;
+                const token = prompt("Enter Admin Token to force Server Update:");
+                if (token) triggerGitHubAction(token);
+            }
+        }
+
+        // 遠端觸發 GitHub Action
+        async function triggerGitHubAction(token) {
+            const owner = "damien8953";
+            const repo = "npilotx";
+            const workflowId = "main.yml";
+
+            const loader = document.getElementById('loader');
+            loader.innerText = "COMMAND SENT TO SERVER...";
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/vnd.github+json',
+                        'Authorization': `Bearer ${token}`,
+                        'X-GitHub-Api-Version': '2022-11-28'
+                    },
+                    body: JSON.stringify({ ref: 'main' })
+                });
+
+                if (response.ok) {
+                    alert("🚀 Server task started! Data will refresh in 2 mins.");
+                } else {
+                    const err = await response.json();
+                    alert("❌ Failed: " + (err.message || "Auth Error"));
+                }
+            } catch (e) {
+                alert("❌ Connection Error");
+            } finally {
+                loader.style.display = 'none';
+                loader.innerText = "SYNCING DATA...";
+            }
+        }
 
         function getLatestZuluInfo(text) {
             const regex = /(\d{4})Z/g;
@@ -171,7 +228,6 @@
             return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
         }
 
-        // 修改這裡：移除末尾的 "Time"
         function formatUpdateDate(timeStr) {
             if (!timeStr) return "--";
             try {
@@ -210,27 +266,21 @@
             const btn = document.getElementById('update-btn');
             btn.innerText = "Syncing...";
             document.getElementById('loader').style.display = 'block';
-            
             try {
                 const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error("JSON Error");
                 const allData = await response.json();
-
                 let firstUpdateFound = false;
-
                 for (const icao of allAirports) {
                     const text = allData[icao];
                     if (!text) continue;
-
                     const lines = text.split('\n');
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
-
                     if (!firstUpdateFound && timeLine) {
                         document.getElementById('global-server-update').innerText = formatUpdateDate(timeLine);
                         firstUpdateFound = true;
                     }
-
                     const atisInfo = getLatestZuluInfo(content);
                     document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
                     const ageEl = document.getElementById(`zulu-age-${icao}`);
@@ -239,16 +289,13 @@
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 }
             } catch (e) { console.error(e); }
-            
             setTimeout(() => { 
                 document.getElementById('loader').style.display = 'none';
                 btn.innerText = "Sync Data";
             }, 600);
         }
 
-        renderUI(); 
-        updateClocks(); 
-        refreshData();
+        renderUI(); updateClocks(); refreshData();
         setInterval(refreshData, 300000);
     </script>
 </body>

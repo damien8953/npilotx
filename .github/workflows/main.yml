@@ -21,35 +21,46 @@ jobs:
           ZHCC, ZHHH, ZSAM, ZSFZ, ZSHC, ZSNB, ZSOF, ZSPD, 
           ZSQD, ZUCK, ZUGY, ZUUU, ZUTF
         ]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
       - name: Install dependencies
         run: pip install requests beautifulsoup4
-
       - name: Run Fetcher
         run: python main.py ${{ matrix.airport }}
-
-      - name: Push results
+      - name: Push individual result
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add atis_${{ matrix.airport }}.txt
-          git commit -m "Auto Update: ${{ matrix.airport }}" || exit 0
-          
-          for i in {1..5}; do
-            echo "Attempt $i: Syncing and Pushing..."
+          git commit -m "Update: ${{ matrix.airport }}" || exit 0
+          for i in {1..10}; do
             git pull --rebase origin main
-            if git push origin main; then
-              echo "Successfully pushed"
-              exit 0
-            fi
+            if git push origin main; then exit 0; fi
             sleep 5
           done
+
+  # --- 新增：整合所有檔案的 Job ---
+  consolidate:
+    needs: fetch-atis  # 確保在所有機場抓完後才執行
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Create JSON
+        run: python combine.py
+      - name: Push JSON
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add all_atis.json
+          git commit -m "Update all_atis.json" || exit 0
+          git push origin main

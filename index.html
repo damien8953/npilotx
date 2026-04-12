@@ -25,84 +25,110 @@
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             -webkit-tap-highlight-color: transparent;
-        }
-
-        #ptr {
-            text-align: center; height: 0; overflow: hidden;
-            background: var(--bg-color); color: var(--accent-blue);
-            font-size: 13px; line-height: 60px; font-weight: 500;
+            overflow-x: hidden;
         }
 
         header {
             padding: 55px 20px 15px;
             background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(25px);
             position: sticky; top: 0; z-index: 100;
             border-bottom: 0.5px solid var(--border-color);
             display: flex; justify-content: space-between; align-items: flex-start;
         }
 
         .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-        .server-update-tag { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
         
-        .header-right { text-align: right; padding-top: 5px; }
-        .clock-item { font-family: "SF Mono", monospace; font-size: 13px; font-weight: 600; line-height: 1.3; }
+        /* 伺服器更新時間分行顯示 */
+        .server-update-box { margin-top: 6px; }
+        .server-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .server-time { font-size: 12px; color: #d1d1d6; margin-top: 2px; font-family: "SF Mono", monospace; }
+        
+        .header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+        
+        /* 時鐘樣式 */
+        .clocks { margin-bottom: 2px; }
+        .clock-item { font-family: "SF Mono", monospace; font-size: 12px; font-weight: 600; line-height: 1.4; }
         .clock-hkt { color: var(--accent-blue); }
         .clock-utc { color: var(--accent-orange); }
+
+        /* 強制更新按鈕 */
+        #update-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 0.5px solid var(--border-color);
+            color: var(--accent-blue);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+        }
+        #update-btn:active { background: var(--accent-blue); color: white; transform: scale(0.95); }
 
         .container { padding: 10px 15px; padding-bottom: 100px; }
 
         .category-header {
-            margin: 20px 0 10px 5px; font-size: 12px; font-weight: 700;
-            color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+            margin: 24px 0 12px 5px; font-size: 12px; font-weight: 700;
+            color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.2px;
             display: flex; align-items: center;
         }
         .category-header::after { content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px; }
 
         .airport-card {
-            background: var(--card-bg); border-radius: 12px; margin-bottom: 8px;
+            background: var(--card-bg); border-radius: 14px; margin-bottom: 10px;
             overflow: hidden; border: 0.5px solid var(--border-color);
         }
 
         .card-header { padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; }
         .icao-box { display: flex; flex-direction: column; gap: 3px; }
-        .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+        .icao-name { font-size: 21px; font-weight: 700; color: var(--text-main); }
         
         .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
         .atis-age-span { font-weight: 400; font-size: 11px; }
         .atis-age-span.warning { color: var(--accent-orange); }
 
         .chevron {
-            width: 10px; height: 10px; border-right: 2px solid var(--text-dim);
-            border-bottom: 2px solid var(--text-dim); transform: rotate(45deg);
+            width: 10px; height: 10px; border-right: 2.5px solid var(--text-dim);
+            border-bottom: 2.5px solid var(--text-dim); transform: rotate(45deg);
         }
 
         .card-content { max-height: 0; padding: 0 18px; opacity: 0; overflow: hidden; transition: all 0.3s ease; background: #2c2c2e; }
-        .expanded .card-content { max-height: 1000px; padding: 18px; opacity: 1; border-top: 0.5px solid var(--border-color); }
+        .expanded .card-content { max-height: 1500px; padding: 18px; opacity: 1; border-top: 0.5px solid var(--border-color); }
         .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
 
         .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
 
-        #loader { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent-blue); color: white; padding: 10px 20px; border-radius: 25px; font-size: 13px; font-weight: 700; display: none; z-index: 1000; }
+        #loader { 
+            position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%); 
+            background: var(--accent-blue); color: white; padding: 10px 22px; 
+            border-radius: 25px; font-size: 13px; font-weight: 700; 
+            display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 
-    <div id="ptr">↓ PULL TO REFRESH</div>
-
     <header>
         <div class="header-left">
             <h1>ATIS PRO</h1>
-            <div class="server-update-tag" id="global-server-update">Last Server Update: --</div>
+            <div class="server-update-box">
+                <div class="server-label">Last Server Update:</div>
+                <div class="server-time" id="global-server-update">YYYY/MM/DD HH:MM HKT</div>
+            </div>
         </div>
         <div class="header-right">
-            <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
-            <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
+            <div class="clocks">
+                <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
+                <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
+            </div>
+            <button id="update-btn" onclick="refreshData()">Sync Data</button>
         </div>
     </header>
 
     <div class="container" id="airport-list"></div>
-    <div id="loader">SYNCING FLEET DATA...</div>
+    <div id="loader">REFRESHING ALL AIRPORTS...</div>
 
     <script>
         const airportGroups = {
@@ -151,7 +177,6 @@
         function formatUpdateDate(timeStr) {
             if (!timeStr) return "--";
             try {
-                // Parse "2026-04-12 17:00:00" -> "2026/04/12 17:00 HKT Time"
                 const parts = timeStr.match(/\d+/g);
                 return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT Time`;
             } catch(e) { return timeStr; }
@@ -184,10 +209,13 @@
         }
 
         async function refreshData() {
+            const btn = document.getElementById('update-btn');
+            btn.innerText = "Syncing...";
             document.getElementById('loader').style.display = 'block';
+            
             try {
                 const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error("JSON missing");
+                if (!response.ok) throw new Error("JSON Error");
                 const allData = await response.json();
 
                 let firstUpdateFound = false;
@@ -200,9 +228,8 @@
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
-                    // 更新全域 Server Update 時間 (只做一次)
                     if (!firstUpdateFound && timeLine) {
-                        document.getElementById('global-server-update').innerText = `Last Server Update: ${formatUpdateDate(timeLine)}`;
+                        document.getElementById('global-server-update').innerText = formatUpdateDate(timeLine);
                         firstUpdateFound = true;
                     }
 
@@ -214,21 +241,16 @@
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 }
             } catch (e) { console.error(e); }
-            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
+            
+            setTimeout(() => { 
+                document.getElementById('loader').style.display = 'none';
+                btn.innerText = "Sync Data";
+            }, 600);
         }
 
-        let startY = 0;
-        window.addEventListener('touchstart', e => { startY = e.touches[0].pageY; });
-        window.addEventListener('touchmove', e => {
-            const dist = e.touches[0].pageY - startY;
-            if (window.scrollY === 0 && dist > 0 && dist < 100) document.getElementById('ptr').style.height = dist + 'px';
-        });
-        window.addEventListener('touchend', () => {
-            if (parseInt(document.getElementById('ptr').style.height) > 60) refreshData();
-            document.getElementById('ptr').style.height = '0px';
-        });
-
-        renderUI(); updateClocks(); refreshData();
+        renderUI(); 
+        updateClocks(); 
+        refreshData();
         setInterval(refreshData, 300000);
     </script>
 </body>

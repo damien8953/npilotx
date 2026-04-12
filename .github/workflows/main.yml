@@ -32,35 +32,40 @@ jobs:
         run: pip install requests beautifulsoup4
       - name: Run Fetcher
         run: python main.py ${{ matrix.airport }}
-      - name: Push individual result
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add atis_${{ matrix.airport }}.txt
-          git commit -m "Update: ${{ matrix.airport }}" || exit 0
-          for i in {1..10}; do
-            git pull --rebase origin main
-            if git push origin main; then exit 0; fi
-            sleep 5
-          done
+      # 將抓到的 .txt 檔案暫存到置物櫃
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: atis-${{ matrix.airport }}
+          path: atis_${{ matrix.airport }}.txt
 
-  # --- 新增：整合所有檔案的 Job ---
   consolidate:
-    needs: fetch-atis  # 確保在所有機場抓完後才執行
+    needs: fetch-atis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      # 從置物櫃下載所有分身抓到的檔案
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+          pattern: atis-*
+          merge-multiple: true
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - name: Create JSON
-        run: python combine.py
-      - name: Push JSON
+      # 將下載回來的檔案移動到主目錄以便 combine.py 處理
+      - name: Move files and Combine
+        run: |
+          cp all-results/*.txt .
+          python combine.py
+      # 這裡是整輪任務「唯一」一次的推送
+      - name: Push everything
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add all_atis.json
-          git commit -m "Update all_atis.json" || exit 0
+          git add *.txt all_atis.json
+          git commit -m "Auto Update: Consolidated ATIS Data" || exit 0
           git push origin main

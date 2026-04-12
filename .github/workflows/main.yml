@@ -30,7 +30,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add atis_result.txt
-          # 這裡強制 commit，即使沒變動也會紀錄（或用 || exit 0 防止報錯）
-          git commit -m "自動更新 ATIS: $(date)" || echo "No changes to commit"
+          # 關鍵修改：使用萬用字元 * 來加入所有 atis 開頭的 txt 檔案
+          git add atis_*.txt
+          git commit -m "自動更新機場 ATIS 數據: $(date)" || echo "No changes to commit"
           git push

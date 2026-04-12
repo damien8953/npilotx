@@ -21,12 +21,16 @@ jobs:
         run: pip install requests beautifulsoup4
 
       - name: 執行抓取程式
-        run: python main.py
+        run: python3 main.py # 這裡改用 python3
+
+      - name: 檢查檔案內容 (除錯用)
+        run: cat atis_result.txt
 
       - name: 將結果推回 GitHub
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add atis_result.txt
-          git commit -m "自動更新 ATIS 數據" || exit 0
+          # 這裡強制 commit，即使沒變動也會紀錄（或用 || exit 0 防止報錯）
+          git commit -m "自動更新 ATIS: $(date)" || echo "No changes to commit"
           git push

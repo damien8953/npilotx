@@ -1,40 +1,43 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+from datetime import datetime
 
-def get_atis(icao_code, max_retries=5):
+def get_atis(icao_code):
     url = f"https://atis.guru/atis/{icao_code}"
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'}
-    
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status() 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            atis_blocks = soup.find_all('div', class_='atis')
-            
-            valid_atis_found = False
-            if atis_blocks:
-                print(f"--- {icao_code} 數據內容 ---")
-                for block in atis_blocks:
-                    content = block.get_text(separator='\n').strip()
-                    # 過濾垃圾文字
-                    if "METAR" in content.upper() or "TAF" in content.upper():
-                        continue
-                    if content:
-                        print(content)
-                        print("-" * 20)
-                        valid_atis_found = True
-            
-            if valid_atis_found:
-                return True
-        except Exception:
-            pass
-        time.sleep(2)
-    return False
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    try:
+        res = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        atis_blocks = soup.find_all('div', class_='atis')
+        output = ""
+        for block in atis_blocks:
+            content = block.get_text(separator='\n').strip()
+            if "METAR" not in content.upper() and "TAF" not in content.upper() and "SPECI" not in content.upper():
+                output += f"{content}\n" + "-"*20 + "\n"
+        return output
+    except Exception as e:
+        return f"Error fetching {icao_code}: {e}\n"
 
 if __name__ == "__main__":
-    airport_list = ["VHHH", "ZSAM", "RCKH", "RCTP", "WSSS"]
-    for icao in airport_list:
-        get_atis(icao)
+    print("🚀 程式開始執行...")
+    airports = ["VHHH", "ZSAM", "RCKH", "RCTP", "WSSS"]
+    
+    # 建立報告內容
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    final_report = f"最後更新時間: {timestamp}\n"
+    final_report += "==============================\n\n"
+    
+    for icao in airports:
+        print(f"正在抓取 {icao}...")
+        final_report += f"【 {icao} 】\n"
+        data = get_atis(icao)
+        final_report += data if data else "⚠️ 暫無數據\n"
+        final_report += "\n"
         time.sleep(2)
+    
+    # 強制寫入檔案
+    with open("atis_result.txt", "w", encoding="utf-8") as f:
+        f.write(final_report)
+    
+    print("✅ 檔案 atis_result.txt 已更新！")

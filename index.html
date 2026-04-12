@@ -81,11 +81,14 @@
 
         .icao-box { display: flex; flex-direction: column; gap: 2px; }
         .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+        
+        /* ATIS Zulu Time Style */
         .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
+        .atis-age-span { font-weight: 400; font-size: 11px; }
+        .atis-age-span.warning { color: var(--accent-orange); }
 
         .time-info-box { text-align: right; display: flex; flex-direction: column; gap: 2px; }
-        .last-dl { font-size: 11px; color: var(--text-dim); }
-        .last-dl.stale { color: var(--accent-orange); }
+        .last-dl { font-size: 10px; color: var(--text-dim); }
 
         .chevron {
             width: 10px; height: 10px;
@@ -141,15 +144,42 @@
         }
         setInterval(updateClocks, 1000);
 
-        // 解析 ATIS 內容中的最新 Zulu 時間 (如 0845Z)
         function extractZuluTime(text) {
             const regex = /(\d{4})Z/g;
             let matches = text.match(regex);
-            if (matches && matches.length > 0) {
-                // 通常第一個出現的 Z 時間是最新的報文時間
-                return matches[0];
+            return (matches && matches.length > 0) ? matches[0].replace('Z','') : null;
+        }
+
+        // 核心邏輯：計算 ATIS 報文與當前 UTC 的差距
+        function getAtisDiff(zuluStr) {
+            if (!zuluStr) return { text: "", isWarning: false };
+            
+            const now = new Date();
+            const hours = parseInt(zuluStr.substring(0, 2));
+            const mins = parseInt(zuluStr.substring(2, 4));
+
+            // 建立當前 UTC 日期的 ATIS 時間對象
+            let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
+
+            // 如果解析出的時間比現在還晚，說明是「昨天」的報文
+            if (atisDate > now) {
+                atisDate.setUTCDate(atisDate.getUTCDate() - 1);
             }
-            return "--";
+
+            const diffMins = Math.floor((now - atisDate) / 60000);
+            let ageText = "";
+            
+            if (diffMins < 60) ageText = `${diffMins}m ago`;
+            else {
+                const h = Math.floor(diffMins / 60);
+                const m = diffMins % 60;
+                ageText = (m === 0) ? `${h}h ago` : `${h}h ${m}m ago`;
+            }
+
+            return {
+                text: ` (${ageText})`,
+                isWarning: diffMins > 120 // 超過 2 小時顯示警告色
+            };
         }
 
         function getTimeAgo(timeStr) {
@@ -169,8 +199,7 @@
             list.innerHTML = '';
             for (const [groupName, icaoList] of Object.entries(airportGroups)) {
                 const title = document.createElement('div');
-                title.className = 'category-header';
-                title.innerText = groupName;
+                title.className = 'category-header'; title.innerText = groupName;
                 list.appendChild(title);
                 icaoList.forEach(icao => {
                     const card = document.createElement('div');
@@ -180,18 +209,16 @@
                         <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="icao-box">
                                 <span class="icao-name">${icao}</span>
-                                <span class="atis-zulu-tag" id="zulu-${icao}">LAST ATIS: --</span>
+                                <span class="atis-zulu-tag" id="zulu-container-${icao}">
+                                    LAST ATIS: <span id="zulu-time-${icao}">--</span><span id="zulu-age-${icao}" class="atis-age-span"></span>
+                                </span>
                             </div>
                             <div class="time-info-box">
-                                <span class="last-dl" id="dl-${icao}">Last Download: --</span>
-                                <div style="display:flex; align-items:center; justify-content:flex-end;">
-                                    <div class="chevron"></div>
-                                </div>
+                                <span class="last-dl" id="dl-${icao}">DL: --</span>
+                                <div style="display:flex; align-items:center; justify-content:flex-end;"><div class="chevron"></div></div>
                             </div>
                         </div>
-                        <div class="card-content">
-                            <div class="atis-text" id="atis-${icao}">Syncing...</div>
-                        </div>
+                        <div class="card-content"><div class="atis-text" id="atis-${icao}">Syncing...</div></div>
                     `;
                     list.appendChild(card);
                 });
@@ -208,20 +235,21 @@
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
-                    // 更新 Last Download
-                    const dlAge = getTimeAgo(timeLine);
-                    const dlEl = document.getElementById(`dl-${icao}`);
-                    dlEl.innerText = `Last Download: ${dlAge}`;
-                    dlEl.className = 'last-dl ' + (dlAge.includes('h') ? 'stale' : '');
+                    // 更新 Download 時間
+                    document.getElementById(`dl-${icao}`).innerText = `DL: ${getTimeAgo(timeLine)}`;
 
-                    // 更新 ATIS Zulu Time
-                    const zuluTime = extractZuluTime(content);
-                    document.getElementById(`zulu-${icao}`).innerText = `LAST ATIS: ${zuluTime}`;
+                    // 更新 ATIS Zulu 與 相對時間
+                    const rawZulu = extractZuluTime(content);
+                    if (rawZulu) {
+                        document.getElementById(`zulu-time-${icao}`).innerText = rawZulu + "Z";
+                        const diff = getAtisDiff(rawZulu);
+                        const ageEl = document.getElementById(`zulu-age-${icao}`);
+                        ageEl.innerText = diff.text;
+                        ageEl.className = 'atis-age-span' + (diff.isWarning ? ' warning' : '');
+                    }
 
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
-                } catch (e) {
-                    document.getElementById(`atis-${icao}`).innerText = "Wait for next update...";
-                }
+                } catch (e) { document.getElementById(`atis-${icao}`).innerText = "Syncing..."; }
             }
             setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
         }
@@ -237,9 +265,7 @@
             document.getElementById('ptr').style.height = '0px';
         });
 
-        renderUI();
-        updateClocks();
-        refreshData();
+        renderUI(); updateClocks(); refreshData();
         setInterval(refreshData, 300000);
     </script>
 </body>

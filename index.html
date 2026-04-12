@@ -45,7 +45,6 @@
         }
 
         .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-        
         .header-right { text-align: right; }
         .clock-item { font-family: "SF Mono", monospace; font-size: 13px; font-weight: 600; line-height: 1.3; }
         .clock-hkt { color: var(--accent-blue); }
@@ -55,7 +54,7 @@
 
         .category-header {
             margin: 20px 0 10px 5px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--text-dim);
             text-transform: uppercase;
@@ -63,9 +62,7 @@
             display: flex;
             align-items: center;
         }
-        .category-header::after {
-            content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px;
-        }
+        .category-header::after { content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px; }
 
         .airport-card {
             background: var(--card-bg);
@@ -73,49 +70,38 @@
             margin-bottom: 8px;
             overflow: hidden;
             border: 0.5px solid var(--border-color);
-            transition: all 0.2s ease;
         }
 
         .card-header {
-            padding: 15px 18px;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .icao-box { display: flex; align-items: baseline; gap: 8px; }
+        .icao-box { display: flex; flex-direction: column; gap: 2px; }
         .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
-        .time-ago { font-size: 13px; color: var(--text-dim); }
-        .time-ago.fresh { color: var(--accent-green); }
-        .time-ago.stale { color: var(--accent-orange); }
+        .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
+
+        .time-info-box { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        .last-dl { font-size: 11px; color: var(--text-dim); }
+        .last-dl.stale { color: var(--accent-orange); }
 
         .chevron {
             width: 10px; height: 10px;
             border-right: 2px solid var(--text-dim);
             border-bottom: 2px solid var(--text-dim);
             transform: rotate(45deg);
-            transition: transform 0.3s;
+            margin-left: 10px;
         }
 
-        .card-content {
-            max-height: 0; padding: 0 18px; opacity: 0; overflow: hidden;
-            transition: all 0.3s ease; background: #2c2c2e;
-        }
-
-        .expanded .card-content { max-height: 1000px; padding: 18px; opacity: 1; border-top: 0.5px solid var(--border-color); }
+        .card-content { max-height: 0; padding: 0 16px; opacity: 0; overflow: hidden; transition: all 0.3s ease; background: #2c2c2e; }
+        .expanded .card-content { max-height: 1000px; padding: 16px; opacity: 1; border-top: 0.5px solid var(--border-color); }
         .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
 
-        .atis-text {
-            white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace;
-            font-size: 14px; line-height: 1.5; color: #d1d1d6;
-        }
+        .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
 
-        #loader {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--accent-blue); color: white; padding: 10px 20px;
-            border-radius: 25px; font-size: 13px; font-weight: 700;
-            display: none; box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4); z-index: 1000;
-        }
+        #loader { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent-blue); color: white; padding: 10px 20px; border-radius: 25px; font-size: 13px; font-weight: 700; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -123,9 +109,7 @@
     <div id="ptr">↓ PULL TO REFRESH</div>
 
     <header>
-        <div class="header-left">
-            <h1>ATIS PRO</h1>
-        </div>
+        <div class="header-left"><h1>ATIS PRO</h1></div>
         <div class="header-right">
             <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
             <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
@@ -133,7 +117,7 @@
     </header>
 
     <div class="container" id="airport-list"></div>
-    <div id="loader">UPDATING DATA...</div>
+    <div id="loader">REFRESHING DATA...</div>
 
     <script>
         const airportGroups = {
@@ -155,9 +139,18 @@
             document.getElementById('time-hkt').innerText = hkt;
             document.getElementById('time-utc').innerText = utc;
         }
-        
         setInterval(updateClocks, 1000);
-        updateClocks();
+
+        // 解析 ATIS 內容中的最新 Zulu 時間 (如 0845Z)
+        function extractZuluTime(text) {
+            const regex = /(\d{4})Z/g;
+            let matches = text.match(regex);
+            if (matches && matches.length > 0) {
+                // 通常第一個出現的 Z 時間是最新的報文時間
+                return matches[0];
+            }
+            return "--";
+        }
 
         function getTimeAgo(timeStr) {
             if (!timeStr) return "--";
@@ -167,8 +160,7 @@
                 const diffMins = Math.floor((new Date() - updateDate) / 60000);
                 if (diffMins < 1) return "Just now";
                 if (diffMins < 60) return `${diffMins}m ago`;
-                const hours = Math.floor(diffMins / 60);
-                return `${hours}h ${diffMins % 60}m ago`;
+                return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m ago`;
             } catch(e) { return "Error"; }
         }
 
@@ -188,9 +180,14 @@
                         <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
                             <div class="icao-box">
                                 <span class="icao-name">${icao}</span>
-                                <span class="time-ago" id="time-${icao}">--</span>
+                                <span class="atis-zulu-tag" id="zulu-${icao}">LAST ATIS: --</span>
                             </div>
-                            <div class="chevron"></div>
+                            <div class="time-info-box">
+                                <span class="last-dl" id="dl-${icao}">Last Download: --</span>
+                                <div style="display:flex; align-items:center; justify-content:flex-end;">
+                                    <div class="chevron"></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-content">
                             <div class="atis-text" id="atis-${icao}">Syncing...</div>
@@ -210,10 +207,17 @@
                     const lines = text.split('\n');
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
-                    const ago = getTimeAgo(timeLine);
-                    const timeEl = document.getElementById(`time-${icao}`);
-                    timeEl.innerText = ago;
-                    timeEl.className = 'time-ago ' + (ago.includes('h') ? 'stale' : 'fresh');
+
+                    // 更新 Last Download
+                    const dlAge = getTimeAgo(timeLine);
+                    const dlEl = document.getElementById(`dl-${icao}`);
+                    dlEl.innerText = `Last Download: ${dlAge}`;
+                    dlEl.className = 'last-dl ' + (dlAge.includes('h') ? 'stale' : '');
+
+                    // 更新 ATIS Zulu Time
+                    const zuluTime = extractZuluTime(content);
+                    document.getElementById(`zulu-${icao}`).innerText = `LAST ATIS: ${zuluTime}`;
+
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 } catch (e) {
                     document.getElementById(`atis-${icao}`).innerText = "Wait for next update...";
@@ -234,202 +238,7 @@
         });
 
         renderUI();
-        refreshData();
-        setInterval(refreshData, 300000);
-    </script>
-</body>
-</html>        }
-        .category-header::after {
-            content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px;
-        }
-
-        /* Airport Card */
-        .airport-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            margin-bottom: 8px;
-            overflow: hidden;
-            border: 0.5px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-
-        .card-header {
-            padding: 15px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .icao-box { display: flex; align-items: baseline; gap: 8px; }
-        .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
-        .time-ago { font-size: 13px; color: var(--text-dim); }
-        .time-ago.fresh { color: var(--accent-green); }
-        .time-ago.stale { color: var(--accent-orange); }
-
-        .chevron {
-            width: 10px; height: 10px;
-            border-right: 2px solid var(--text-dim);
-            border-bottom: 2px solid var(--text-dim);
-            transform: rotate(45deg);
-            transition: transform 0.3s;
-        }
-
-        .card-content {
-            max-height: 0; padding: 0 18px; opacity: 0; overflow: hidden;
-            transition: all 0.3s ease; background: #2c2c2e;
-        }
-
-        .expanded .card-content { max-height: 1000px; padding: 18px; opacity: 1; border-top: 0.5px solid var(--border-color); }
-        .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
-
-        .atis-text {
-            white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace;
-            font-size: 14px; line-height: 1.5; color: #d1d1d6;
-        }
-
-        #loader {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background: var(--accent-blue); color: white; padding: 10px 20px;
-            border-radius: 25px; font-size: 13px; font-weight: 700;
-            display: none; box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4); z-index: 1000;
-        }
-    </style>
-</head>
-<body>
-
-    <div id="ptr">↓ PULL TO REFRESH</div>
-
-    <header>
-        <div class="header-left">
-            <h1>ATIS PRO</h1>
-        </div>
-        <div class="header-right">
-            <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
-            <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
-        </div>
-    </header>
-
-    <div class="container" id="airport-list"></div>
-    <div id="loader">UPDATING DATA...</div>
-
-    <script>
-        // 機場區域分類設定
-        const airportGroups = {
-            "Home Base": ["VHHH"],
-            "Taiwan": ["RCKH", "RCTP", "RCMQ"],
-            "North East Asia": ["RJAA", "RJBB", "RJFF", "RKPC", "RKSI"],
-            "South East Asia": ["VTBD", "VTBS", "VVDN", "VVNB", "WMKK", "WSSS"],
-            "North China": ["ZBAA", "ZBAD", "ZBTJ", "ZBYN", "ZHCC", "ZHHH"],
-            "East China": ["ZGGG", "ZGKL", "ZGNN", "ZGOW", "ZGSZ", "ZSAM", "ZSCG", "ZSFZ", "ZSHC", "ZSNB", "ZSOF", "ZSPD", "ZSQD"],
-            "West China": ["ZUCK", "ZUGY", "ZUUU", "ZUTF"]
-        };
-
-        const allAirports = Object.values(airportGroups).flat();
-
-        // 實時更新時鐘
-        function updateClocks() {
-            const now = new Date();
-            
-            // HKT (UTC+8)
-            const hkt = new Intl.DateTimeFormat('en-US', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                hour12: false, timeZone: 'Asia/Hong_Kong'
-            }).format(now);
-            
-            // UTC
-            const utc = new Intl.DateTimeFormat('en-US', {
-                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                hour12: false, timeZone: 'UTC'
-            }).format(now);
-
-            document.getElementById('time-hkt').innerText = hkt;
-            document.getElementById('time-utc').innerText = utc;
-        }
-        
-        setInterval(updateClocks, 1000);
         updateClocks();
-
-        function getTimeAgo(timeStr) {
-            if (!timeStr) return "--";
-            try {
-                const parts = timeStr.match(/\d+/g);
-                const updateDate = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
-                const diffMins = Math.floor((new Date() - updateDate) / 60000);
-                if (diffMins < 1) return "Just now";
-                if (diffMins < 60) return `${diffMins}m ago`;
-                const hours = Math.floor(diffMins / 60);
-                return `${hours}h ${diffMins % 60}m ago`;
-            } catch(e) { return "Error"; }
-        }
-
-        function renderUI() {
-            const list = document.getElementById('airport-list');
-            list.innerHTML = '';
-            
-            for (const [groupName, icaoList] of Object.entries(airportGroups)) {
-                // 加入分類標題
-                const title = document.createElement('div');
-                title.className = 'category-header';
-                title.innerText = groupName;
-                list.appendChild(title);
-
-                icaoList.forEach(icao => {
-                    const card = document.createElement('div');
-                    card.className = 'airport-card';
-                    card.id = `card-${icao}`;
-                    card.innerHTML = `
-                        <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
-                            <div class="icao-box">
-                                <span class="icao-name">${icao}</span>
-                                <span class="time-ago" id="time-${icao}">--</span>
-                            </div>
-                            <div class="chevron"></div>
-                        </div>
-                        <div class="card-content">
-                            <div class="atis-text" id="atis-${icao}">Syncing...</div>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-            }
-        }
-
-        async function refreshData() {
-            document.getElementById('loader').style.display = 'block';
-            for (const icao of allAirports) {
-                try {
-                    const res = await fetch(`atis_${icao}.txt?t=${new Date().getTime()}`);
-                    if (!res.ok) throw new Error();
-                    const text = await res.text();
-                    const lines = text.split('\n');
-                    const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
-                    const content = lines.slice(4).join('\n').trim();
-
-                    const ago = getTimeAgo(timeLine);
-                    const timeEl = document.getElementById(`time-${icao}`);
-                    timeEl.innerText = ago;
-                    timeEl.className = 'time-ago ' + (ago.includes('h') ? 'stale' : 'fresh');
-                    document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
-                } catch (e) {
-                    document.getElementById(`atis-${icao}`).innerText = "Wait for next update...";
-                }
-            }
-            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
-        }
-
-        // Pull to Refresh
-        let startY = 0;
-        window.addEventListener('touchstart', e => { startY = e.touches[0].pageY; });
-        window.addEventListener('touchmove', e => {
-            const dist = e.touches[0].pageY - startY;
-            if (window.scrollY === 0 && dist > 0 && dist < 100) document.getElementById('ptr').style.height = dist + 'px';
-        });
-        window.addEventListener('touchend', () => {
-            if (parseInt(document.getElementById('ptr').style.height) > 60) refreshData();
-            document.getElementById('ptr').style.height = '0px';
-        });
-
-        renderUI();
         refreshData();
         setInterval(refreshData, 300000);
     </script>

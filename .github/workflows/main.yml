@@ -5,7 +5,10 @@ on:
     - cron: '*/30 * * * *'
   workflow_dispatch: 
 
-# --- 新增：明確要求寫入權限 ---
+# --- 🚀 修正：強制開啟 Node.js 24 以消除所有警告 ---
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write
   pages: write
@@ -30,14 +33,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install dependencies
         run: pip install requests beautifulsoup4
+
       - name: Run Fetcher
         run: python main.py ${{ matrix.airport }}
+
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
@@ -51,24 +58,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Download all results
         uses: actions/download-artifact@v4
         with:
           path: all-results
           pattern: atis-*
           merge-multiple: true
+          
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          
       - name: Move files and Combine
         run: |
           cp all-results/*.txt .
           python combine.py
+          
       - name: Push everything
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add *.txt all_atis.json
-          # 如果沒有變動就不提交，避免報錯
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto Update: Consolidated ATIS Data" && git push origin main)

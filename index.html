@@ -1,7 +1,196 @@
-async function refreshData() {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ATIS MONITOR PRO</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --bg-color: #000000;
+            --card-bg: #1c1c1e;
+            --accent-blue: #0a84ff;
+            --accent-green: #32d74b;
+            --accent-orange: #ff9f0a;
+            --text-main: #ffffff;
+            --text-dim: #8e8e93;
+            --border-color: #38383a;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #ptr {
+            text-align: center; height: 0; overflow: hidden;
+            background: var(--bg-color); color: var(--accent-blue);
+            font-size: 13px; line-height: 60px; font-weight: 500;
+        }
+
+        header {
+            padding: 55px 20px 15px;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 0.5px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: flex-end;
+        }
+
+        .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        .header-right { text-align: right; }
+        .clock-item { font-family: "SF Mono", monospace; font-size: 13px; font-weight: 600; line-height: 1.3; }
+        .clock-hkt { color: var(--accent-blue); }
+        .clock-utc { color: var(--accent-orange); }
+
+        .container { padding: 10px 15px; padding-bottom: 100px; }
+
+        .category-header {
+            margin: 20px 0 10px 5px; font-size: 12px; font-weight: 700;
+            color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center;
+        }
+        .category-header::after { content: ""; flex: 1; height: 0.5px; background: var(--border-color); margin-left: 10px; }
+
+        .airport-card {
+            background: var(--card-bg); border-radius: 12px; margin-bottom: 8px;
+            overflow: hidden; border: 0.5px solid var(--border-color);
+        }
+
+        .card-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .icao-box { display: flex; flex-direction: column; gap: 2px; }
+        .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+        
+        .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
+        .atis-age-span { font-weight: 400; font-size: 11px; }
+        .atis-age-span.warning { color: var(--accent-orange); }
+
+        .time-info-box { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        .last-dl { font-size: 10px; color: var(--text-dim); }
+
+        .chevron {
+            width: 10px; height: 10px; border-right: 2px solid var(--text-dim);
+            border-bottom: 2px solid var(--text-dim); transform: rotate(45deg); margin-left: 10px;
+        }
+
+        .card-content { max-height: 0; padding: 0 16px; opacity: 0; overflow: hidden; transition: all 0.3s ease; background: #2c2c2e; }
+        .expanded .card-content { max-height: 1000px; padding: 16px; opacity: 1; border-top: 0.5px solid var(--border-color); }
+        .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
+
+        .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
+
+        #loader { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent-blue); color: white; padding: 10px 20px; border-radius: 25px; font-size: 13px; font-weight: 700; display: none; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+    <div id="ptr">↓ PULL TO REFRESH</div>
+
+    <header>
+        <div class="header-left"><h1>ATIS PRO</h1></div>
+        <div class="header-right">
+            <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
+            <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
+        </div>
+    </header>
+
+    <div class="container" id="airport-list"></div>
+    <div id="loader">SYNCING ALL DATA...</div>
+
+    <script>
+        const airportGroups = {
+            "Home Base": ["VHHH"],
+            "Taiwan": ["RCKH", "RCTP", "RCMQ"],
+            "North East Asia": ["RJAA", "RJBB", "RJFF", "RKPC", "RKSI"],
+            "South East Asia": ["VTBD", "VTBS", "VVDN", "VVNB", "WMKK", "WSSS"],
+            "North China": ["ZBAA", "ZBAD", "ZBTJ", "ZBYN", "ZHCC", "ZHHH"],
+            "East China": ["ZGGG", "ZGKL", "ZGNN", "ZGOW", "ZGSZ", "ZSAM", "ZSFZ", "ZSHC", "ZSNB", "ZSOF", "ZSPD", "ZSQD"],
+            "West China": ["ZUCK", "ZUGY", "ZUUU", "ZUTF"]
+        };
+
+        const allAirports = Object.values(airportGroups).flat();
+
+        function updateClocks() {
+            const now = new Date();
+            const hkt = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Hong_Kong' }).format(now);
+            const utc = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'UTC' }).format(now);
+            document.getElementById('time-hkt').innerText = hkt;
+            document.getElementById('time-utc').innerText = utc;
+        }
+        setInterval(updateClocks, 1000);
+
+        function getLatestZuluInfo(text) {
+            const regex = /(\d{4})Z/g;
+            let matches = text.match(regex);
+            if (!matches) return { zulu: "--", diffText: "", isWarning: false };
+            const now = new Date();
+            let bestZulu = "", minDiff = Infinity, finalDiffText = "", finalWarning = false;
+            matches.forEach(match => {
+                const zuluStr = match.replace('Z', '');
+                const hours = parseInt(zuluStr.substring(0, 2)), mins = parseInt(zuluStr.substring(2, 4));
+                let atisDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hours, mins));
+                if (atisDate > now) atisDate.setUTCDate(atisDate.getUTCDate() - 1);
+                const diffMins = Math.floor((now - atisDate) / 60000);
+                if (diffMins < minDiff) {
+                    minDiff = diffMins; bestZulu = match;
+                    if (diffMins < 60) finalDiffText = ` (${diffMins}m ago)`;
+                    else finalDiffText = ` (${Math.floor(diffMins/60)}h ${diffMins%60}m ago)`;
+                    finalWarning = diffMins > 120;
+                }
+            });
+            return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
+        }
+
+        function getTimeAgo(timeStr) {
+            if (!timeStr) return "--";
+            try {
+                const parts = timeStr.match(/\d+/g);
+                const updateDate = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+                const diffMins = Math.floor((new Date() - updateDate) / 60000);
+                if (diffMins < 1) return "Just now";
+                if (diffMins < 60) return `${diffMins}m ago`;
+                return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m ago`;
+            } catch(e) { return "Error"; }
+        }
+
+        function renderUI() {
+            const list = document.getElementById('airport-list');
+            list.innerHTML = '';
+            for (const [groupName, icaoList] of Object.entries(airportGroups)) {
+                const title = document.createElement('div');
+                title.className = 'category-header'; title.innerText = groupName;
+                list.appendChild(title);
+                icaoList.forEach(icao => {
+                    const card = document.createElement('div');
+                    card.className = 'airport-card';
+                    card.id = `card-${icao}`;
+                    card.innerHTML = `
+                        <div class="card-header" onclick="this.parentElement.classList.toggle('expanded')">
+                            <div class="icao-box">
+                                <span class="icao-name">${icao}</span>
+                                <span class="atis-zulu-tag">LAST ATIS: <span id="zulu-time-${icao}">--</span><span id="zulu-age-${icao}" class="atis-age-span"></span></span>
+                            </div>
+                            <div class="time-info-box">
+                                <span class="last-dl" id="dl-${icao}">DL: --</span>
+                                <div style="display:flex; align-items:center; justify-content:flex-end;"><div class="chevron"></div></div>
+                            </div>
+                        </div>
+                        <div class="card-content"><div class="atis-text" id="atis-${icao}">Syncing...</div></div>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+        }
+
+        // 🚀 核心優化：一次讀取所有資料
+        async function refreshData() {
             document.getElementById('loader').style.display = 'block';
             try {
-                // 核心優化：只下載這一個 10KB 左右的小檔案
                 const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error("JSON not found");
                 const allData = await response.json();
@@ -14,21 +203,33 @@ async function refreshData() {
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
-                    // 更新 Download 時間 (這裡顯示的是 JSON 生成的時間)
                     document.getElementById(`dl-${icao}`).innerText = `DL: ${getTimeAgo(timeLine)}`;
-
-                    // 更新 ATIS Zulu 與 相對時間
                     const atisInfo = getLatestZuluInfo(content);
                     document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
                     const ageEl = document.getElementById(`zulu-age-${icao}`);
                     ageEl.innerText = atisInfo.diffText;
                     ageEl.className = 'atis-age-span' + (atisInfo.isWarning ? ' warning' : '');
-
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 }
             } catch (e) {
                 console.error("Fetch failed", e);
-                // 如果 JSON 還沒生成，嘗試降級處理或顯示錯誤
             }
             setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
         }
+
+        let startY = 0;
+        window.addEventListener('touchstart', e => { startY = e.touches[0].pageY; });
+        window.addEventListener('touchmove', e => {
+            const dist = e.touches[0].pageY - startY;
+            if (window.scrollY === 0 && dist > 0 && dist < 100) document.getElementById('ptr').style.height = dist + 'px';
+        });
+        window.addEventListener('touchend', () => {
+            if (parseInt(document.getElementById('ptr').style.height) > 60) refreshData();
+            document.getElementById('ptr').style.height = '0px';
+        });
+
+        renderUI(); updateClocks(); refreshData();
+        setInterval(refreshData, 300000);
+    </script>
+</body>
+</html>

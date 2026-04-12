@@ -31,24 +31,25 @@ def get_atis(icao_code):
         return ""
 
 def save_to_file(icao, data, timestamp):
+    # 這裡只處理「有數據」的情況
+    if not data.strip():
+        print(f"⏭️ {icao} 無效數據，跳過存檔以保留舊資料。")
+        return False
+
     filename = f"atis_{icao}.txt"
     file_content = f"✈️ {icao} ATIS MONITOR\n"
     file_content += f"更新時間: {timestamp}\n"
     file_content += "==============================\n\n"
-    
-    if data.strip():
-        file_content += data
-    else:
-        file_content += "⚠️ 目前無有效 ATIS 數據。\n"
+    file_content += data
         
     with open(filename, "w", encoding="utf-8") as f:
         f.write(file_content)
-    print(f"✅ {filename} 已儲存")
+    print(f"✅ {filename} 已更新！")
+    return True
 
 if __name__ == "__main__":
     airports = ["VHHH", "ZSAM", "RCKH", "RCTP", "WSSS"]
-    results = {}  # 用來存放抓取結果
-    retry_list = [] # 用來存放失敗的機場
+    retry_list = []
 
     # 取得香港時間
     now_hk = datetime.utcnow() + timedelta(hours=8)
@@ -58,27 +59,24 @@ if __name__ == "__main__":
     for icao in airports:
         data = get_atis(icao)
         if data.strip():
-            results[icao] = data
             save_to_file(icao, data, timestamp)
         else:
-            print(f"⚠️ {icao} 暫無數據，加入重試清單。")
+            print(f"⚠️ {icao} 第一輪無數據。")
             retry_list.append(icao)
         time.sleep(2)
 
-    # 如果有失敗的機場，進入重試邏輯
+    # 重試邏輯
     if retry_list:
-        print(f"\n⏳ 發現 {len(retry_list)} 個機場無數據，等待 60 秒後重試...")
+        print(f"\n⏳ 等待 60 秒後重試失敗的機場...")
         time.sleep(60)
         
-        print(f"🔄 第二輪重試開始...")
         for icao in retry_list:
             data = get_atis(icao)
             if data.strip():
-                print(f"✨ {icao} 重試成功！")
                 save_to_file(icao, data, timestamp)
             else:
-                print(f"❌ {icao} 重試後依然無數據。")
-                save_to_file(icao, "", timestamp) # 最終還是沒數據就寫入提示
+                # 關鍵點：重試失敗後，直接 print，不調用 save_to_file
+                print(f"❌ {icao} 重試依然無數據，不覆蓋舊檔案。")
             time.sleep(2)
     
-    print("\n🎉 任務全部完成。")
+    print("\n🎉 任務執行完畢。")

@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-import sys # 增加這行來讀取指令參數
+import sys
 from datetime import datetime, timedelta
 
 def get_atis(icao_code):
@@ -28,7 +28,6 @@ def get_atis(icao_code):
         return ""
 
 if __name__ == "__main__":
-    # 從指令讀取機場 ICAO (例如: python main.py VHHH)
     if len(sys.argv) < 2:
         print("缺少機場參數")
         sys.exit(1)
@@ -37,20 +36,20 @@ if __name__ == "__main__":
     now_hk = datetime.utcnow() + timedelta(hours=8)
     timestamp = now_hk.strftime("%Y-%m-%d %H:%M:%S")
 
-    print(f"🚀 啟動獨立任務: {icao}")
+    print(f"🚀 啟動獨立任務: {icao} (最大重試次數: 10)")
 
-    for attempt in range(1, 6):
+    # 迴圈改為 1 到 10 次
+    for attempt in range(1, 11):
         data = get_atis(icao)
         if data.strip():
-            # 存檔邏輯
             filename = f"atis_{icao}.txt"
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(f"✈️ {icao} ATIS MONITOR\nUpdate: {timestamp}\n"+"="*30+"\n\n"+data)
-            print(f"✅ {icao} 更新成功")
-            sys.exit(0) # 成功後完全退出
+            print(f"✅ {icao} 更新成功 (第 {attempt} 次嘗試)")
+            sys.exit(0)
         else:
-            if attempt < 5:
-                print(f"⚠️ {icao} 失敗，30秒後重試 ({attempt}/5)...")
+            if attempt < 10:
+                print(f"⚠️ {icao} 失敗，30秒後重試 ({attempt}/10)...")
                 time.sleep(30)
             else:
-                print(f"❌ {icao} 最終失敗，不覆蓋舊檔。")
+                print(f"❌ {icao} 已達 10 次重試上限，放棄本次更新。")

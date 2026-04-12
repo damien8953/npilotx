@@ -1,4 +1,4 @@
-name: Hourly ATIS Update
+name: Parallel ATIS Update
 
 on:
   schedule:
@@ -6,32 +6,37 @@ on:
   workflow_dispatch: 
 
 jobs:
-  build:
+  fetch-atis:
     runs-on: ubuntu-latest
+    strategy:
+      # 重要：即使一個機場失敗，其他機場也要繼續跑
+      fail-fast: false 
+      matrix:
+        # 在這裡填入你公司所有的機場！
+        airport: [VHHH, ZSAM, RCKH, RCTP, WSSS, ZGGG, VMMC] 
+
     steps:
-      - name: 檢出代碼
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: 設定 Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: 安裝套件
+      - name: Install dependencies
         run: pip install requests beautifulsoup4
 
-      - name: 執行抓取程式
-        run: python3 main.py # 這裡改用 python3
+      - name: Run Fetcher
+        # 這裡會根據矩陣自動帶入機場代碼
+        run: python main.py ${{ matrix.airport }}
 
-      - name: 檢查 VHHH 內容 (測試用)
-        run: cat atis_VHHH.txt # 改為檢查獨立檔案，而不是舊的總表
-
-      - name: 將結果推回 GitHub
+      - name: Push results
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add atis_*.txt
-          # 順便把舊的總表刪掉，免得礙眼
-          git rm atis_result.txt --ignore-unmatch 
-          git commit -m "自動更新 ATIS 數據: $(date)" || echo "No changes to commit"
-          git push
+          # 關鍵：因為多個任務同時跑，推送前先 pull 以免衝突
+          git pull --rebase origin main
+          git add atis_${{ matrix.airport }}.txt
+          git commit -m "Auto Update: ${{ matrix.airport }}" || exit 0
+          git push origin main

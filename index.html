@@ -32,11 +32,12 @@
             --tab-bar-bg: rgba(28, 28, 30, 0.9);
         }
 
-        /* 鎖定 Body 防止整個頁面被拖曳導致底欄亂跳 */
+        /* 鎖定 Body，確保背景填滿全螢幕 */
         html, body {
             margin: 0; 
             padding: 0;
-            height: 100%;
+            height: 100vh;
+            width: 100vw;
             overflow: hidden; 
             background-color: var(--bg-color);
             color: var(--text-main);
@@ -45,26 +46,26 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* App Shell 佈局：讓畫面分為「滾動區」和「固定底欄」 */
+        /* 改用 Absolute 絕對定位，徹底脫離 Flex 限制 */
         #app-container {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            display: flex;
-            flex-direction: column;
+            overflow: hidden;
         }
 
-        /* 只有這個區塊可以上下滑動 */
+        /* 滾動內容區域也是滿版，但可以上下滑動 */
         .views-wrapper {
-            flex: 1;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             overflow-y: auto;
             overflow-x: hidden;
-            -webkit-overflow-scrolling: touch; /* iOS 順滑滾動 */
+            -webkit-overflow-scrolling: touch; 
         }
 
         .view {
             display: none;
-            /* 預留空間給 Tab bar (55px) + iOS 底部安全區，再加上一點緩衝避免內容被遮擋 */
-            padding-bottom: calc(75px + env(safe-area-inset-bottom)); 
+            /* 預留空間給 Tab bar (約60px) + 安全區，確保滑到底時內容不會被遮住 */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
         }
         .view.active {
             display: block;
@@ -97,10 +98,13 @@
         header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; user-select: none; }
 
         /* =========================================
-           BOTTOM NAVIGATION BAR (完美貼底)
+           BOTTOM NAVIGATION BAR (終極貼底方案)
            ========================================= */
         .tab-bar {
-            flex-shrink: 0;
+            position: fixed; /* 強制釘在視窗上 */
+            bottom: 0;       /* 實體螢幕最底端 */
+            left: 0;
+            right: 0;
             background: var(--tab-bar-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -109,10 +113,10 @@
             justify-content: space-around;
             align-items: center;
             
-            /* 關鍵修正：讓背景色延伸到螢幕實體最底端，但圖示保持在安全區之上 */
+            /* 圖示區域高度 */
+            height: 55px; 
+            /* 向下延伸背景，填滿 Home Indicator 區域 */
             padding-bottom: env(safe-area-inset-bottom);
-            height: 55px; /* 圖示與文字的顯示高度 */
-            box-sizing: content-box; /* 確保總高度 = 55px + 安全區高度 */
             
             z-index: 999;
         }

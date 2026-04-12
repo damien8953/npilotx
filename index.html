@@ -63,7 +63,8 @@
 
         .view {
             display: none;
-            padding-bottom: 80px; /* 底部預留空間給 Tab bar，避免內容被遮擋 */
+            /* 預留空間給 Tab bar (55px) + iOS 底部安全區，再加上一點緩衝避免內容被遮擋 */
+            padding-bottom: calc(75px + env(safe-area-inset-bottom)); 
         }
         .view.active {
             display: block;
@@ -96,7 +97,7 @@
         header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; user-select: none; }
 
         /* =========================================
-           BOTTOM NAVIGATION BAR (絕對固定且貼底)
+           BOTTOM NAVIGATION BAR (完美貼底)
            ========================================= */
         .tab-bar {
             flex-shrink: 0;
@@ -107,7 +108,12 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            height: 60px; /* 固定高度，不使用 env(safe-area-inset-bottom) */
+            
+            /* 關鍵修正：讓背景色延伸到螢幕實體最底端，但圖示保持在安全區之上 */
+            padding-bottom: env(safe-area-inset-bottom);
+            height: 55px; /* 圖示與文字的顯示高度 */
+            box-sizing: content-box; /* 確保總高度 = 55px + 安全區高度 */
+            
             z-index: 999;
         }
 
@@ -153,7 +159,7 @@
         .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
         .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
         #loader { 
-            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); 
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); 
             background: var(--accent-blue); color: white; padding: 10px 22px; 
             border-radius: 25px; font-size: 13px; font-weight: 700; 
             display: none; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);

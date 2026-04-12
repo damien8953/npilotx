@@ -23,11 +23,10 @@
             margin: 0; padding: 0;
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Pull to Refresh */
         #ptr {
             text-align: center; height: 0; overflow: hidden;
             background: var(--bg-color); color: var(--accent-blue);
@@ -46,9 +45,8 @@
         .status-bar { display: flex; align-items: center; margin-top: 5px; font-size: 13px; color: var(--text-dim); }
         .dot { height: 8px; width: 8px; background-color: var(--accent-green); border-radius: 50%; display: inline-block; margin-right: 6px; box-shadow: 0 0 8px var(--accent-green); }
 
-        .container { padding: 10px 15px; }
+        .container { padding: 10px 15px; padding-bottom: 100px; }
 
-        /* Airport Card Design */
         .airport-card {
             background: var(--card-bg);
             border-radius: 14px;
@@ -79,7 +77,6 @@
             transition: transform 0.3s;
         }
 
-        /* Expansion Logic */
         .card-content {
             max-height: 0;
             padding: 0 20px;
@@ -100,11 +97,10 @@
 
         .atis-text {
             white-space: pre-wrap;
-            font-family: "SF Mono", "Menlo", "Courier New", monospace;
+            font-family: "SF Mono", "Menlo", monospace;
             font-size: 15px;
             line-height: 1.5;
             color: #d1d1d6;
-            letter-spacing: 0.2px;
         }
 
         #loader {
@@ -114,6 +110,7 @@
             padding: 10px 20px; border-radius: 25px;
             font-size: 14px; font-weight: 600;
             display: none; box-shadow: 0 8px 20px rgba(10, 132, 255, 0.4);
+            z-index: 1000;
         }
     </style>
 </head>
@@ -123,29 +120,34 @@
 
     <header>
         <h1>ATIS PRO</h1>
-        <div class="status-bar"><span class="dot"></span> LIVE DATA FEED</div>
+        <div class="status-bar"><span class="dot"></span> LIVE FLEET DATA</div>
     </header>
 
     <div class="container" id="airport-list"></div>
     <div id="loader">UPDATING...</div>
 
     <script>
-        const airports = ["VHHH", "ZSAM", "RCKH", "RCTP", "WSSS"];
+        const airports = [
+            "VHHH", "VTBD", "VTBS", "VVDN", "VVNB", 
+            "RCKH", "RCTP", "RCMQ", 
+            "RJAA", "RJBB", "RJFF", 
+            "RKPC", "RKSI", "RKTU", 
+            "WIII", "WMKK", "WSSS", 
+            "ZBAA", "ZBAD", "ZBTJ", "ZBYN", "ZGGG", "ZGKL", "ZGNN", "ZGOW", "ZGSZ", 
+            "ZHCC", "ZHHH", "ZSAM", "ZSCG", "ZSFZ", "ZSHC", "ZSNB", "ZSOF", "ZSPD", 
+            "ZSQD", "ZUCK", "ZUGY", "ZUUU", "ZUTF"
+        ];
         
-        // Helper: Calculate Time Ago
         function getTimeAgo(timeStr) {
             if (!timeStr) return "--";
             try {
-                // Parse "2026-04-12 14:28:58"
                 const parts = timeStr.match(/\d+/g);
                 const updateDate = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
                 const diffMs = new Date() - updateDate;
                 const diffMins = Math.floor(diffMs / 60000);
 
-                if (diffMins < 0) return "Just now";
                 if (diffMins < 1) return "Just now";
                 if (diffMins < 60) return `${diffMins}m ago`;
-                
                 const hours = Math.floor(diffMins / 60);
                 const mins = diffMins % 60;
                 return mins === 0 ? `${hours}h ago` : `${hours}h ${mins}m ago`;
@@ -180,30 +182,28 @@
             for (const icao of airports) {
                 try {
                     const res = await fetch(`atis_${icao}.txt?t=${new Date().getTime()}`);
+                    if (!res.ok) throw new Error();
                     const text = await res.text();
                     const lines = text.split('\n');
                     
-                    // Parse: Line 1 is Time
-                    const timeLine = lines[1] ? lines[1].replace('更新時間: ', '').trim() : "";
+                    const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
                     const timeAgoStr = getTimeAgo(timeLine);
-                    const timeEl = document.getElementById(`time-${timeStr = icao}`);
+                    const timeEl = document.getElementById(`time-${icao}`);
                     timeEl.innerText = timeAgoStr;
                     
-                    // Color coding for freshness
                     if (timeAgoStr.includes('h')) timeEl.className = 'time-ago stale';
                     else timeEl.className = 'time-ago fresh';
 
                     document.getElementById(`atis-${icao}`).innerText = content || "No data available.";
                 } catch (e) {
-                    document.getElementById(`atis-${icao}`).innerText = "Network Error.";
+                    document.getElementById(`atis-${icao}`).innerText = "Pending data update...";
                 }
             }
             setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
         }
 
-        // Pull to Refresh Logic
         let startY = 0;
         window.addEventListener('touchstart', e => { startY = e.touches[0].pageY; });
         window.addEventListener('touchmove', e => {
@@ -220,7 +220,7 @@
 
         createCards();
         updateData();
-        setInterval(updateData, 300000); // 5 min auto sync
+        setInterval(updateData, 300000);
     </script>
 </body>
 </html>

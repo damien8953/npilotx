@@ -39,20 +39,17 @@
 
         .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
         
-        /* 伺服器更新時間分行顯示 */
         .server-update-box { margin-top: 6px; }
         .server-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
         .server-time { font-size: 12px; color: #d1d1d6; margin-top: 2px; font-family: "SF Mono", monospace; }
         
         .header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
         
-        /* 時鐘樣式 */
         .clocks { margin-bottom: 2px; }
         .clock-item { font-family: "SF Mono", monospace; font-size: 12px; font-weight: 600; line-height: 1.4; }
         .clock-hkt { color: var(--accent-blue); }
         .clock-utc { color: var(--accent-orange); }
 
-        /* 強制更新按鈕 */
         #update-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 0.5px solid var(--border-color);
@@ -174,11 +171,12 @@
             return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
         }
 
+        // 修改這裡：移除末尾的 "Time"
         function formatUpdateDate(timeStr) {
             if (!timeStr) return "--";
             try {
                 const parts = timeStr.match(/\d+/g);
-                return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT Time`;
+                return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT`;
             } catch(e) { return timeStr; }
         }
 

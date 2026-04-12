@@ -1,0 +1,33 @@
+name: Hourly ATIS Update
+
+on:
+  schedule:
+    # 定時任務：每 30 分鐘執行一次 (UTC 時間)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # 允許手動點擊按鈕執行
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 檢出代碼
+        uses: actions/checkout@v3
+
+      - name: 設定 Python
+        uses: install-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: 安裝套件
+        run: pip install requests beautifulsoup4
+
+      - name: 執行抓取程式
+        run: python main.py
+
+      - name: 將結果推回 GitHub
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add atis_result.txt
+          git commit -m "自動更新 ATIS 數據" || exit 0
+          git push

@@ -39,11 +39,13 @@
             backdrop-filter: blur(20px);
             position: sticky; top: 0; z-index: 100;
             border-bottom: 0.5px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: flex-end;
+            display: flex; justify-content: space-between; align-items: flex-start;
         }
 
         .header-left h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-        .header-right { text-align: right; }
+        .server-update-tag { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
+        
+        .header-right { text-align: right; padding-top: 5px; }
         .clock-item { font-family: "SF Mono", monospace; font-size: 13px; font-weight: 600; line-height: 1.3; }
         .clock-hkt { color: var(--accent-blue); }
         .clock-utc { color: var(--accent-orange); }
@@ -62,24 +64,21 @@
             overflow: hidden; border: 0.5px solid var(--border-color);
         }
 
-        .card-header { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .icao-box { display: flex; flex-direction: column; gap: 2px; }
+        .card-header { padding: 16px 18px; display: flex; justify-content: space-between; align-items: center; }
+        .icao-box { display: flex; flex-direction: column; gap: 3px; }
         .icao-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
         
         .atis-zulu-tag { font-family: "SF Mono", monospace; font-size: 12px; color: var(--accent-green); font-weight: 600; }
         .atis-age-span { font-weight: 400; font-size: 11px; }
         .atis-age-span.warning { color: var(--accent-orange); }
 
-        .time-info-box { text-align: right; display: flex; flex-direction: column; gap: 2px; }
-        .last-dl { font-size: 10px; color: var(--text-dim); }
-
         .chevron {
             width: 10px; height: 10px; border-right: 2px solid var(--text-dim);
-            border-bottom: 2px solid var(--text-dim); transform: rotate(45deg); margin-left: 10px;
+            border-bottom: 2px solid var(--text-dim); transform: rotate(45deg);
         }
 
-        .card-content { max-height: 0; padding: 0 16px; opacity: 0; overflow: hidden; transition: all 0.3s ease; background: #2c2c2e; }
-        .expanded .card-content { max-height: 1000px; padding: 16px; opacity: 1; border-top: 0.5px solid var(--border-color); }
+        .card-content { max-height: 0; padding: 0 18px; opacity: 0; overflow: hidden; transition: all 0.3s ease; background: #2c2c2e; }
+        .expanded .card-content { max-height: 1000px; padding: 18px; opacity: 1; border-top: 0.5px solid var(--border-color); }
         .expanded .chevron { transform: rotate(-135deg); border-color: var(--accent-blue); }
 
         .atis-text { white-space: pre-wrap; font-family: "SF Mono", "Menlo", monospace; font-size: 14px; line-height: 1.5; color: #d1d1d6; }
@@ -92,7 +91,10 @@
     <div id="ptr">↓ PULL TO REFRESH</div>
 
     <header>
-        <div class="header-left"><h1>ATIS PRO</h1></div>
+        <div class="header-left">
+            <h1>ATIS PRO</h1>
+            <div class="server-update-tag" id="global-server-update">Last Server Update: --</div>
+        </div>
         <div class="header-right">
             <div class="clock-item clock-hkt">HKT <span id="time-hkt">--:--</span></div>
             <div class="clock-item clock-utc">UTC <span id="time-utc">--:--</span></div>
@@ -100,7 +102,7 @@
     </header>
 
     <div class="container" id="airport-list"></div>
-    <div id="loader">SYNCING ALL DATA...</div>
+    <div id="loader">SYNCING FLEET DATA...</div>
 
     <script>
         const airportGroups = {
@@ -146,16 +148,13 @@
             return { zulu: bestZulu, diffText: finalDiffText, isWarning: finalWarning };
         }
 
-        function getTimeAgo(timeStr) {
+        function formatUpdateDate(timeStr) {
             if (!timeStr) return "--";
             try {
+                // Parse "2026-04-12 17:00:00" -> "2026/04/12 17:00 HKT Time"
                 const parts = timeStr.match(/\d+/g);
-                const updateDate = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
-                const diffMins = Math.floor((new Date() - updateDate) / 60000);
-                if (diffMins < 1) return "Just now";
-                if (diffMins < 60) return `${diffMins}m ago`;
-                return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m ago`;
-            } catch(e) { return "Error"; }
+                return `${parts[0]}/${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]} HKT Time`;
+            } catch(e) { return timeStr; }
         }
 
         function renderUI() {
@@ -175,10 +174,7 @@
                                 <span class="icao-name">${icao}</span>
                                 <span class="atis-zulu-tag">LAST ATIS: <span id="zulu-time-${icao}">--</span><span id="zulu-age-${icao}" class="atis-age-span"></span></span>
                             </div>
-                            <div class="time-info-box">
-                                <span class="last-dl" id="dl-${icao}">DL: --</span>
-                                <div style="display:flex; align-items:center; justify-content:flex-end;"><div class="chevron"></div></div>
-                            </div>
+                            <div class="chevron"></div>
                         </div>
                         <div class="card-content"><div class="atis-text" id="atis-${icao}">Syncing...</div></div>
                     `;
@@ -187,13 +183,14 @@
             }
         }
 
-        // 🚀 核心優化：一次讀取所有資料
         async function refreshData() {
             document.getElementById('loader').style.display = 'block';
             try {
                 const response = await fetch(`all_atis.json?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error("JSON not found");
+                if (!response.ok) throw new Error("JSON missing");
                 const allData = await response.json();
+
+                let firstUpdateFound = false;
 
                 for (const icao of allAirports) {
                     const text = allData[icao];
@@ -203,7 +200,12 @@
                     const timeLine = lines[1] ? lines[1].replace(/Update:|更新時間:/, '').trim() : "";
                     const content = lines.slice(4).join('\n').trim();
 
-                    document.getElementById(`dl-${icao}`).innerText = `DL: ${getTimeAgo(timeLine)}`;
+                    // 更新全域 Server Update 時間 (只做一次)
+                    if (!firstUpdateFound && timeLine) {
+                        document.getElementById('global-server-update').innerText = `Last Server Update: ${formatUpdateDate(timeLine)}`;
+                        firstUpdateFound = true;
+                    }
+
                     const atisInfo = getLatestZuluInfo(content);
                     document.getElementById(`zulu-time-${icao}`).innerText = atisInfo.zulu;
                     const ageEl = document.getElementById(`zulu-age-${icao}`);
@@ -211,9 +213,7 @@
                     ageEl.className = 'atis-age-span' + (atisInfo.isWarning ? ' warning' : '');
                     document.getElementById(`atis-${icao}`).innerText = content || "No current ATIS.";
                 }
-            } catch (e) {
-                console.error("Fetch failed", e);
-            }
+            } catch (e) { console.error(e); }
             setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 500);
         }
 

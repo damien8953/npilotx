@@ -1,5 +1,5 @@
 ✈️ ZSOF ATIS MONITOR
-Update: 2026-04-15 03:48:13
+Update: 2026-04-15 04:50:23
 ==============================
 
 ZSOF ARR ATIS L
@@ -12,15 +12,4 @@ T 17 /DP 13
 QNH 1012 HPA
 TRL 3600
 ADZ YOU HAVE INFO L.
---------------------
-ZSOF DEP ATIS N
-1000Z DEP RWY 33
-WIND 020 DEG 1 MPS
-VIS 5000
-BR
-CLD OVC 1200M
-T 17 /DP 14
-QNH 1012 HPA
-TRL 3600
-ADZ YOU HAVE INFO N.
 --------------------

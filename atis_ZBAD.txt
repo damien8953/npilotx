@@ -1,5 +1,5 @@
 ✈️ ZBAD ATIS MONITOR
-Update: 2026-04-16 05:13:20
+Update: 2026-04-16 06:08:56
 ==============================
 
 ZBAD ARR ATIS T
@@ -14,13 +14,4 @@ T 14 /DP 11
 QNH 1011 HPA
 STOP BAR U/S
 ADZ YOU HAVE INFO T.
---------------------
-ZBAD DEP ATIS I
-1600Z DEP RWY 35R & 11L
-WIND 160 DEG 1 MPS
-VIS 6000
-NSC
-T 16 /DP 11
-QNH 1012 HPA
-ADZ YOU HAVE INFO I.
 --------------------

@@ -1,5 +1,5 @@
 ✈️ ZSNB ATIS MONITOR
-Update: 2026-04-21 04:03:54
+Update: 2026-04-21 05:09:38
 ==============================
 
 ZSNB ARR ATIS Y
@@ -11,4 +11,13 @@ CLD BKN 600M
 T 18 /DP 15
 QNH 1017 HPA
 ADZ YOU HAVE INFO Y.
+--------------------
+ZSNB DEP ATIS M
+0300Z DEP RWY 13
+WIND 040 DEG 2 MPS 340V100 DEG
+VIS 7000
+NSC
+T 24 /DP 16
+QNH 1014 HPA
+ADZ YOU HAVE INFO M.
 --------------------

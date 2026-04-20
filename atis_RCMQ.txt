@@ -1,5 +1,5 @@
 ✈️ RCMQ ATIS MONITOR
-Update: 2026-04-20 13:25:32
+Update: 2026-04-20 15:27:09
 ==============================
 
 RCMQ ARR ATIS X

@@ -1,5 +1,5 @@
 ✈️ ZGKL ATIS MONITOR
-Update: 2026-04-27 04:02:45
+Update: 2026-04-27 05:03:18
 ==============================
 
 ZGKL ARR ATIS F
@@ -11,14 +11,4 @@ CAVOK
 T 30 /DP 15
 QNH 1011 HPA
 ADZ YOU HAVE INFO F.
---------------------
-ZGKL DEP ATIS N
-1300Z DEP RWY 01
-TA 3000
-WIND VRB DEG 1 MPS
-VIS 9999
-CLD OVC 1380M
-T 15 /DP 13
-QNH 1013 HPA
-ADZ YOU HAVE INFO N.
 --------------------

@@ -1,5 +1,5 @@
 ✈️ ZSNB ATIS MONITOR
-Update: 2026-05-05 18:18:43
+Update: 2026-05-05 23:50:39
 ==============================
 
 ZSNB ARR ATIS E
@@ -10,4 +10,12 @@ CAVOK
 T 25 /DP 11
 QNH 1013 HPA
 ADZ YOU HAVE INFO E.
+--------------------
+ZSNB DEP ATIS J
+1200Z DEP RWY 13
+WIND 150 DEG 3 MPS
+CAVOK
+T 21 /DP 09
+QNH 1017 HPA
+ADZ YOU HAVE INFO J.
 --------------------

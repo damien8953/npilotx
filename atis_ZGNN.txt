@@ -1,5 +1,5 @@
 ✈️ ZGNN ATIS MONITOR
-Update: 2026-06-17 20:59:31
+Update: 2026-06-18 00:40:56
 ==============================
 
 ZGNN ARR ATIS W

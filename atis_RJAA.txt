@@ -1,5 +1,5 @@
 ✈️ RJAA ATIS MONITOR
-Update: 2026-07-13 07:24:18
+Update: 2026-07-13 09:02:12
 ==============================
 
 RJAA ARR ATIS T
@@ -20,7 +20,7 @@ Q/TWO NINE FIVE ZERO
 STP
 --------------------
 RJAA DEP ATIS T
-1040Z M1030
+1056Z M1030
 (APCH)ILS Z RWY34R
 LDG RWY 34R
 DEP RWY 34L

@@ -1,5 +1,5 @@
 ✈️ RJFF ATIS MONITOR
-Update: 2026-07-21 05:40:23
+Update: 2026-07-21 06:55:49
 ==============================
 
 RJFF ARR ATIS J
@@ -18,7 +18,7 @@ Q/TWO NINE SEVEN ONE
 STP
 --------------------
 RJFF DEP ATIS L
-0242Z M0230
+0255Z M0230
 (APCH)ILS RWY16L
 LDG RWY 16L
 DEP RWY 16L/16R

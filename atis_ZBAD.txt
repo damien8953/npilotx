@@ -1,5 +1,5 @@
 ✈️ ZBAD ATIS MONITOR
-Update: 2026-08-14 07:37:12
+Update: 2026-08-14 09:29:36
 ==============================
 
 ZBAD ARR ATIS V
@@ -11,4 +11,12 @@ CAVOK
 T 34 /DP 26
 QNH 1008 HPA
 ADZ YOU HAVE INFO V.
+--------------------
+ZBAD DEP ATIS X
+0300Z DEP RWY 35R & 11L
+WIND 120 DEG 2 MPS 090V200 DEG
+CAVOK
+T 34 /DP 27
+QNH 1008 HPA
+ADZ YOU HAVE INFO X.
 --------------------

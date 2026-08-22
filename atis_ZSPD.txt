@@ -1,5 +1,5 @@
 ✈️ ZSPD ATIS MONITOR
-Update: 2026-08-23 05:44:21
+Update: 2026-08-23 06:16:55
 ==============================
 
 ZSPD ARR ATIS R

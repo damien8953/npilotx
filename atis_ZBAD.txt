@@ -1,5 +1,5 @@
 ✈️ ZBAD ATIS MONITOR
-Update: 2026-08-26 07:21:14
+Update: 2026-08-26 07:47:51
 ==============================
 
 ZBAD ARR ATIS M
@@ -13,13 +13,4 @@ CLD FEW 450M
 T 27 /DP 25
 QNH 1007 HPA
 ADZ YOU HAVE INFO M.
---------------------
-ZBAD DEP ATIS L
-0630Z DEP RWY 35R & 11L
-WIND 010 DEG 3 MPS
-VIS 9999
-CLD FEW 450M
-T 28 /DP 24
-QNH 1007 HPA
-ADZ YOU HAVE INFO L.
 --------------------

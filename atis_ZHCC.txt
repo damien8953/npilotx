@@ -1,5 +1,5 @@
 ✈️ ZHCC ATIS MONITOR
-Update: 2026-09-04 01:28:38
+Update: 2026-09-04 04:05:41
 ==============================
 
 ZHCC ARR ATIS G
@@ -11,4 +11,14 @@ CAVOK
 T 26 /DP 23
 QNH 1007 HPA
 ADZ YOU HAVE INFO G.
+--------------------
+ZHCC DEP ATIS H
+1900Z DEP RWY 12L
+TA 3000
+WIND 070/2MPS
+CAVOK
+T 26 /DP 24
+QNH 1008 HPA
+DLV FREQ 118.075
+ADZ YOU HAVE INFO H.
 --------------------

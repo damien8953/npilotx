@@ -1,5 +1,5 @@
 ✈️ ZSHC ATIS MONITOR
-Update: 2026-09-07 07:26:56
+Update: 2026-09-07 09:13:36
 ==============================
 
 ZSHC ARR ATIS C
